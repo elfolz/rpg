@@ -188,10 +188,10 @@ function initGame() {
 }
 
 function resizeScene() {
-	camera.aspect = window.visualViewport.width / window.visualViewport.height
+	camera.aspect = window.innerWidth / window.innerHeight
 	camera.updateProjectionMatrix()
 	renderer.setPixelRatio(window.devicePixelRatio)
-	renderer.setSize(window.visualViewport.width, window.visualViewport.height)
+	renderer.setSize(window.innerWidth, window.innerHeight)
 }
 
 function animate() {
@@ -356,8 +356,6 @@ function playSE(buffer, loop=false) {
 }
 
 window.onresize = () => resizeScene()
-window.visualViewport.onresize = () => resizeScene()
-window.visualViewport.onscroll = () => resizeScene()
 document.onreadystatechange = () => {
 	if (document.readyState != 'complete') return
 	loadModels()
