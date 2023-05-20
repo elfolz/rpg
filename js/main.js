@@ -246,12 +246,7 @@ function classSelection() {
 				clip = mixer.clipAction(animation)
 				executeCrossFade(clip, 'once')
 			}
-			let se = null
-			if (chosenClass == 'guerreiro') se = 'sword'
-			else if (chosenClass == 'paladino') se = 'great-sword'
-			else if (chosenClass == 'mago') se = 'stick'
-			else if (chosenClass == 'arqueiro') se = 'bow'
-			if (se) playSE(ses[se])
+			playSe()
 		}
 		chosenClass = e.target.value
 		animationName = classes[chosenClass].take
@@ -262,9 +257,9 @@ function classSelection() {
 				if (firstTime) executeCrossFade(clip, 'once')
 				else synchronizeCrossFade(clip, 'once')
 			}, 100)
-			playSe()
+			setTimeout(() => {playSe()}, 400)
 		} else if (chosenClass == 'mago') {
-			playSe()
+			setTimeout(() => {playSe()}, 400)
 		}
 		setTimeout(() => {
 			animationName = classes[chosenClass].idle
@@ -275,14 +270,12 @@ function classSelection() {
 		}, 200)
 	}
 	function playSe() {
-		setTimeout(() => {
-			let se = null
-			if (chosenClass == 'guerreiro') se = 'sword'
-			else if (chosenClass == 'paladino') se = 'great-sword'
-			else if (chosenClass == 'mago') se = 'stick'
-			else if (chosenClass == 'arqueiro') se = 'bow'
-			if (se) playSE(ses[se])
-		}, 400)
+		let se = null
+		if (chosenClass == 'guerreiro') se = 'sword'
+		else if (chosenClass == 'paladino') se = 'great-sword'
+		else if (chosenClass == 'mago') se = 'stick'
+		else if (chosenClass == 'arqueiro') se = 'bow'
+		if (se) playSE(ses[se])
 	}
 }
 
