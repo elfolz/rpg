@@ -33,7 +33,7 @@ body {
 	color: whitesmoke;
 }
 body.loaded {
-	background-image: url("/textures/sky.webp");
+	background-image: url("./textures/sky.webp");
 	background-size: cover;
 }
 main {

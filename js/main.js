@@ -127,7 +127,7 @@ var bgmSource
 var ses = []
 
 function loadModels() {
-	textureLoader.load('/textures/grass.webp', texture => {
+	textureLoader.load('./textures/grass.webp', texture => {
 			texture.wrapS = THREE.RepeatWrapping
 			texture.wrapT = THREE.RepeatWrapping
 			texture.colorSpace = THREE.SRGBColorSpace
