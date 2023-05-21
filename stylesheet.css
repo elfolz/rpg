@@ -67,7 +67,10 @@ select, option, input[type=text] {
 	background-color: rgba(0, 0, 0, 0.5);
 	color: whitesmoke;
 }
-input[type=text] {
+select, option, button {
+	cursor: pointer;
+}
+input[type=text], select {
 	padding: 0 6px;
 }
 button {
@@ -79,4 +82,10 @@ button {
 	background-color: var(--color-primary);
 	color: whitesmoke;
 	text-transform: uppercase;
+}
+#fps {
+	position: fixed;
+	top: calc(12px + env(safe-area-inset-top, 0));
+	right: 12px;
+	z-index: 1;
 }

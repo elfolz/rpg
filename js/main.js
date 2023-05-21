@@ -1,6 +1,7 @@
 import * as THREE from './three.module.js'
 import { GLTFLoader } from './gltfLoader.module.js'
 import { OrbitControls } from './orbitControls.js'
+import classes from './classes.js'
 
 if (location.protocol.startsWith('https')) {
 	navigator.serviceWorker.register('service-worker.js')
@@ -20,68 +21,6 @@ const textureLoader = new THREE.TextureLoader()
 const scene = new THREE.Scene()
 const controls = new OrbitControls(camera, renderer.domElement)
 const fpsLimit = 1 / 60
-const classes = {
-	general: {
-		idle: 'idle',
-		walk: 'walk',
-		run: 'move_RUN',
-		hit: 'hit',
-		pull: 'pull',
-		push: 'push',
-		jump_start: 'jump_start',
-		jump_end: 'reception',
-		death: 'move_DEATH',
-		fall: 'fall'
-	},
-	guerreiro: {
-		idle: 'idle(shield)',
-		walk: 'walk(shield)',
-		run: 'small_sword_shield_RUN',
-		attack1: 'attack1(shield)',
-		attack2: 'attack2(shield)',
-		hit: 'hit(shield)',
-		take: 'take(WeaponOneHand)',
-		stow: 'stow(WeaponOneHand)',
-		death: 'death(shield)',
-		jump_start: 'jump_start(shield)',
-		jump_end: 'reception(shield)',
-		fall: 'fall(shield)'
-	},
-	paladino: {
-		idle: 'idle(WeaponTwoHand)',
-		walk: 'walk(WeaponTwoHand)',
-		run: 'small_sword_RUN',
-		attack1: 'attack1(WeaponTwoHand)',
-		attack2: 'attack2(WeaponTwoHand)',
-		hit: 'hit(WeaponTwoHand)',
-		take: 'take(WeaponTwoHand)',
-		stow: 'stow(WeaponTwoHand)',
-		death: 'death(WeaponTwoHand)',
-		jump_start: 'jump_start(WeaponTwoHand)',
-		jump_end: 'reception(WeaponTwoHand)',
-		fall: 'fall(WeaponTwoHand)'
-	},
-	mago: {
-		idle: 'idle(stick)',
-		walk: 'walk(stick)',
-		run: 'stick_RUN',
-		attack1: 'attack1(stick)'
-	},
-	arqueiro: {
-		idle: 'bow_IDLE_ARMED',
-		walk: 'walk(bow)',
-		run: 'bow_RUN',
-		attack1: 'bow_FIRE',
-		hit: 'bow_HIT',
-		load: 'bow_LOAD',
-		take: 'take(bow)',
-		stow: 'bow_STOW',
-		death: 'bow_DEATH',
-		jump_start: 'jump_start(bow)',
-		jump_end: 'reception(bow)',
-		fall: 'fall(bow)'
-	}
-}
 
 const progress = new Proxy({}, {
 	set: function(target, key, value) {
@@ -113,27 +52,31 @@ var audio
 var audioContext
 var bgmGain
 var seGain
+var character
+var object
+var mixer
+var lastAction
+var bgmBuffer
+var bgmSource
+var animations = []
+var ses = []
+var fps = 0
+var frames = 0
 var clockDelta = 0
 var gameStarted = false
 var userInteracted = false
-var character
-var object
-var animations = []
-var mixer
-var lastAction
-var chosenClass
-var bgmBuffer
-var bgmSource
-var ses = []
+var lastFrameTime = performance.now()
+var chosenClass = Object.keys(classes)[1]
 
 function loadModels() {
 	textureLoader.load('./textures/grass.webp', texture => {
-			texture.wrapS = THREE.RepeatWrapping
-			texture.wrapT = THREE.RepeatWrapping
+			texture.wrapS = THREE.MirroredRepeatWrapping
+			texture.wrapT = THREE.MirroredRepeatWrapping
 			texture.colorSpace = THREE.SRGBColorSpace
-			texture.repeat.set(parseInt(texture.wrapS / 1000), parseInt(texture.wrapT / 1000))
-			const ground = new THREE.Mesh(new THREE.CircleGeometry(10, 320), new THREE.MeshLambertMaterial({map: texture, side: THREE.DoubleSide}))
+			texture.repeat.set(5, 5)
+			const ground = new THREE.Mesh(new THREE.CircleGeometry(10), new THREE.MeshLambertMaterial({map: texture, side: THREE.DoubleSide}))
 			ground.rotation.x = - Math.PI / 2
+			ground.position.y -= 0.5
 			ground.receiveShadow = true
 			scene.add(ground)
 			if (!progress['ground']) progress['ground'] = 100
@@ -152,6 +95,7 @@ function loadModels() {
 				if (el.name == 'Plane') el.visible = false
 			})
 			character.colorSpace = THREE.SRGBColorSpace
+			character.position.y -= 0.5
 			mixer = new THREE.AnimationMixer(character)
 			lastAction = mixer.clipAction(animations.find(el => el.name == classes[Object.keys(classes)[1]].idle))
 			lastAction.play()
@@ -164,7 +108,7 @@ function loadModels() {
 			dirLight.target = character
 			camera.near = size / 100
 			camera.far = size * 100
-			camera.position.copy(center)
+			center.y += 0.5
 			camera.position.z += size * 0.65
 			camera.lookAt(center)
 			scene.add(character)
@@ -183,6 +127,7 @@ function initGame() {
 	document.body.classList.add('loaded')
 	document.body.removeChild(document.querySelector('figure'))
 	document.querySelector('main').style.removeProperty('display')
+	document.querySelector('#fps').style.removeProperty('display')
 	resizeScene()
 	animate()
 }
@@ -202,6 +147,7 @@ function animate() {
 	mixer.update(clockDelta)
 	renderer.render(scene, camera)
 	controls.update()
+	updateFPSCounter()
 	clockDelta = fpsLimit ? clockDelta % fpsLimit : clockDelta
 }
 
@@ -226,6 +172,23 @@ function synchronizeCrossFade(newAction, loop='repeat') {
 	}
 }
 
+function updateFPSCounter() {
+		frames++
+		if (performance.now() < lastFrameTime + 1000) return
+		fps = Math.round(( frames * 1000 ) / ( performance.now() - lastFrameTime ))
+		if (!Number.isNaN(fps)) {
+			let ctx = document.querySelector('#fps').getContext('2d')
+			ctx.font = 'bold 20px sans-serif'
+			ctx.textAlign = 'end'
+			ctx.textBaseline = 'middle'
+			ctx.fillStyle = 'rgba(255,255,255,0.25)'
+			ctx.clearRect(0, 0, 80, 20)
+			ctx.fillText(`${fps} FPS`, 80, 10)
+		}
+		lastFrameTime = performance.now()
+		frames = 0
+	}
+
 function classSelection() {
 	Object.keys(classes).forEach(el => {
 		if (el == 'general') return
@@ -238,24 +201,20 @@ function classSelection() {
 		let animationName
 		let animation
 		let clip
-		let firstTime = chosenClass ? false : true
-		if (!firstTime) {
-			animationName = classes[chosenClass].stow
-			if (animationName) {
-				animation = animations.find(el => el.name == animationName)
-				clip = mixer.clipAction(animation)
-				executeCrossFade(clip, 'once')
-			}
-			playSe()
+		animationName = classes[chosenClass].stow
+		if (animationName) {
+			animation = animations.find(el => el.name == animationName)
+			clip = mixer.clipAction(animation)
+			executeCrossFade(clip, 'once')
 		}
+		playSe()
 		chosenClass = e.target.value
 		animationName = classes[chosenClass].take
 		if (animationName) {
 			setTimeout(() => {
 				animation = animations.find(el => el.name == animationName)
 				clip = mixer.clipAction(animation)
-				if (firstTime) executeCrossFade(clip, 'once')
-				else synchronizeCrossFade(clip, 'once')
+				synchronizeCrossFade(clip, 'once')
 			}, 100)
 			setTimeout(() => {playSe()}, 400)
 		} else if (chosenClass == 'mago') {
