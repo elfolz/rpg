@@ -14,7 +14,7 @@ if (location.protocol.startsWith('https')) {
 const clock = new THREE.Clock()
 const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true, preserveDrawingBuffer: true})
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-const hemisphereLight = new THREE.HemisphereLight(0xddeeff, 0x000000, 0.5)
+const hemisphereLight = new THREE.HemisphereLight(0xFFFFFF, 0xFFFFFF, 0.5)
 const dirLight = new THREE.DirectionalLight(0xFFFFFF, 0.5)
 const gltfLoader = new GLTFLoader()
 const textureLoader = new THREE.TextureLoader()
@@ -38,8 +38,6 @@ const progress = new Proxy({}, {
 scene.background = null
 renderer.outputColorSpace = THREE.SRGBColorSpace
 renderer.shadowMap.enabled = true
-renderer.sortObjects = false
-renderer.setClearColor(0x000000, 0)
 controls.enableRotate = true
 controls.enableZoom = false
 controls.maxPolarAngle = (Math.PI / 2) - 0.1
@@ -70,21 +68,22 @@ var chosenClass = Object.keys(classes)[1]
 
 function loadModels() {
 	textureLoader.load('./textures/grass.webp', texture => {
-			texture.wrapS = THREE.MirroredRepeatWrapping
-			texture.wrapT = THREE.MirroredRepeatWrapping
-			texture.colorSpace = THREE.SRGBColorSpace
-			texture.repeat.set(5, 5)
-			const ground = new THREE.Mesh(new THREE.CircleGeometry(10), new THREE.MeshLambertMaterial({map: texture, side: THREE.DoubleSide}))
-			ground.rotation.x = - Math.PI / 2
-			ground.position.y -= 0.5
-			ground.receiveShadow = true
-			scene.add(ground)
-			if (!progress['ground']) progress['ground'] = 100
-		}, xhr => {
-			progress['ground'] = xhr.loaded / (xhr.total || 1) * 100
-		}, error => {
-			console.error(error)
-		})
+		texture.wrapS = THREE.MirroredRepeatWrapping
+		texture.wrapT = THREE.MirroredRepeatWrapping
+		texture.colorSpace = THREE.SRGBColorSpace
+		texture.repeat.set(5, 5)
+		const material = new THREE.MeshPhongMaterial({map: texture})
+		const ground = new THREE.Mesh(new THREE.CircleGeometry(10), material)
+		ground.rotation.x = - Math.PI / 2
+		ground.position.y -= 0.5
+		ground.receiveShadow = true
+		scene.add(ground)
+		if (!progress['ground']) progress['ground'] = 100
+	}, xhr => {
+		progress['ground'] = xhr.loaded / (xhr.total || 1) * 99 / 2
+	}, error => {
+		console.error(error)
+	})
 	gltfLoader.load('./models/character.glb',
 		gltf => {
 			character = gltf.scene
@@ -112,9 +111,10 @@ function loadModels() {
 			camera.position.z += size * 0.65
 			camera.lookAt(center)
 			scene.add(character)
+			progress['character'] = 100
 			initGame()
 		}, xhr => {
-			progress['character'] = xhr.loaded / (xhr.total || 1) * 100
+			progress['character'] = xhr.loaded / (xhr.total || 1) * 99
 		}, error => {
 			console.error(error)
 		}
