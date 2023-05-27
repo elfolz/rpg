@@ -1,6 +1,8 @@
 import * as THREE from './three.module.js'
 import { GLTFLoader } from './gltfLoader.module.js'
 import { OrbitControls } from './orbitControls.js'
+import { FontLoader } from './fontLoader.module.js'
+import { TextGeometry } from './textGeometry.module.js'
 import classes from './classes.js'
 
 if (location.protocol.startsWith('https')) {
@@ -18,6 +20,7 @@ const hemisphereLight = new THREE.HemisphereLight(0xFFFFFF, 0xFFFFFF, 0.5)
 const dirLight = new THREE.DirectionalLight(0xFFFFFF, 0.5)
 const gltfLoader = new GLTFLoader()
 const textureLoader = new THREE.TextureLoader()
+const fontLoader = new FontLoader()
 const scene = new THREE.Scene()
 const controls = new OrbitControls(camera, renderer.domElement)
 const fpsLimit = 1 / 60
@@ -41,7 +44,7 @@ renderer.shadowMap.enabled = true
 controls.enableRotate = true
 controls.enableZoom = false
 controls.maxPolarAngle = (Math.PI / 2) - 0.1
-dirLight.position.set(0, 1, 0)
+dirLight.position.set(0, 1, 1)
 dirLight.castShadow = true
 scene.add(dirLight)
 scene.add(hemisphereLight)
@@ -65,9 +68,10 @@ var gameStarted = false
 var userInteracted = false
 var lastFrameTime = performance.now()
 var chosenClass = Object.keys(classes)[1]
+var globalFont
 
 function loadModels() {
-	textureLoader.load('./textures/grass.webp', texture => {
+	/* textureLoader.load('./textures/grass.webp', texture => {
 		texture.wrapS = THREE.MirroredRepeatWrapping
 		texture.wrapT = THREE.MirroredRepeatWrapping
 		texture.colorSpace = THREE.SRGBColorSpace
@@ -83,7 +87,7 @@ function loadModels() {
 		progress['ground'] = xhr.loaded / (xhr.total || 1) * 99 / 2
 	}, error => {
 		console.error(error)
-	})
+	}) */
 	gltfLoader.load('./models/character.glb',
 		gltf => {
 			character = gltf.scene
@@ -96,8 +100,9 @@ function loadModels() {
 			character.colorSpace = THREE.SRGBColorSpace
 			character.position.y -= 0.5
 			mixer = new THREE.AnimationMixer(character)
-			lastAction = mixer.clipAction(animations.find(el => el.name == classes[Object.keys(classes)[1]].idle))
+			lastAction = mixer.clipAction(animations.find(el => el.name == 'idle'))
 			lastAction.play()
+			loadPlate()
 			const box = new THREE.Box3().setFromObject(character)
 			const size = box.getSize(new THREE.Vector3()).length()
 			const center = box.getCenter(new THREE.Vector3())
@@ -121,12 +126,90 @@ function loadModels() {
 	)
 }
 
+function loadPlate() {
+	let width = 1
+	let height = 1.5
+	let shape = new THREE.Shape()
+	shape.moveTo(0, 0.1)
+	shape.lineTo(0, height - 0.1)
+	shape.quadraticCurveTo(0, height, 0.1, height)
+	shape.lineTo(width - 0.1, height)
+	shape.quadraticCurveTo(width, height, width, height - 0.1)
+	shape.lineTo(width, 0.1)
+	shape.quadraticCurveTo(width, 0, width - 0.1, 0)
+	shape.lineTo(0.1, 0)
+	shape.quadraticCurveTo(0, 0, 0, 0.1)
+	const geometry = new THREE.ShapeGeometry(shape)
+	const mesh = new THREE.Mesh(geometry)
+	mesh.position.set(width/2*-1, (height/2*-1)+0.15, 0)
+	mesh.material.color.setRGB(0.1, 0.1, 0.1)
+	scene.add(mesh)
+	fontLoader.load('./js/righteousRegular.json', font => {
+		globalFont = font
+		const txt1 = new TextGeometry('Elfo', {
+			font: globalFont,
+			size: 0.1,
+			height: 0.025,
+		})
+		const material1 = new THREE.MeshPhongMaterial()
+		const mesh1 = new THREE.Mesh(txt1, material1)
+		const box1 = new THREE.Box3().setFromObject(mesh1)
+		const center1 = box1.getCenter(new THREE.Vector3())
+		mesh1.position.y = 0.675
+		mesh1.position.x -= center1.x
+    scene.add(mesh1)
+		loadItems()
+	})
+
+}
+
+function loadItems() {
+	gltfLoader.load('./models/heart.glb', gftl => {
+		const heart = gftl.scene
+		heart.scale.set(0.0016, 0.0016, 0.0016)
+		heart.position.x = -0.375
+		heart.position.y = 0.685
+		scene.add(heart)
+		const txt = new TextGeometry('x1', {
+			font: globalFont,
+			size: 0.05,
+			height: 0.025,
+		})
+		const material = new THREE.MeshPhongMaterial()
+		const mesh = new THREE.Mesh(txt, material)
+		const box = new THREE.Box3().setFromObject(heart)
+		const center = box.getCenter(new THREE.Vector3())
+		mesh.position.x = center.x - 0.0275
+		mesh.position.y = 0.625
+		scene.add(mesh)
+	})
+	gltfLoader.load('./models/trophy.glb', gftl => {
+		const trophy = gftl.scene
+		trophy.scale.set(0.003, 0.003, 0.003)
+		trophy.position.x = 0.3765
+		trophy.position.y = 0.685
+		scene.add(trophy)
+		const txt = new TextGeometry('x3', {
+			font: globalFont,
+			size: 0.05,
+			height: 0.025,
+		})
+		const material = new THREE.MeshPhongMaterial()
+		const mesh = new THREE.Mesh(txt, material)
+		const box = new THREE.Box3().setFromObject(trophy)
+		const center = box.getCenter(new THREE.Vector3())
+		mesh.position.x = center.x - 0.0275
+		mesh.position.y = 0.625
+		scene.add(mesh)
+	})
+}
+
 function initGame() {
 	if (gameStarted) return
 	gameStarted = true
-	document.body.classList.add('loaded')
+	//document.body.classList.add('loaded')
 	document.body.removeChild(document.querySelector('figure'))
-	document.querySelector('main').style.removeProperty('display')
+	//document.querySelector('main').style.removeProperty('display')
 	document.querySelector('#fps').style.removeProperty('display')
 	resizeScene()
 	animate()
@@ -173,21 +256,21 @@ function synchronizeCrossFade(newAction, loop='repeat') {
 }
 
 function updateFPSCounter() {
-		frames++
-		if (performance.now() < lastFrameTime + 1000) return
-		fps = Math.round(( frames * 1000 ) / ( performance.now() - lastFrameTime ))
-		if (!Number.isNaN(fps)) {
-			let ctx = document.querySelector('#fps').getContext('2d')
-			ctx.font = 'bold 20px sans-serif'
-			ctx.textAlign = 'end'
-			ctx.textBaseline = 'middle'
-			ctx.fillStyle = 'rgba(255,255,255,0.25)'
-			ctx.clearRect(0, 0, 80, 20)
-			ctx.fillText(`${fps} FPS`, 80, 10)
-		}
-		lastFrameTime = performance.now()
-		frames = 0
+	frames++
+	if (performance.now() < lastFrameTime + 1000) return
+	fps = Math.round(( frames * 1000 ) / ( performance.now() - lastFrameTime ))
+	if (!Number.isNaN(fps)) {
+		let ctx = document.querySelector('#fps').getContext('2d')
+		ctx.font = 'bold 20px sans-serif'
+		ctx.textAlign = 'end'
+		ctx.textBaseline = 'middle'
+		ctx.fillStyle = 'rgba(255,255,255,0.25)'
+		ctx.clearRect(0, 0, 80, 20)
+		ctx.fillText(`${fps} FPS`, 80, 10)
 	}
+	lastFrameTime = performance.now()
+	frames = 0
+}
 
 function classSelection() {
 	Object.keys(classes).forEach(el => {
@@ -311,11 +394,11 @@ window.onresize = () => resizeScene()
 document.onreadystatechange = () => {
 	if (document.readyState != 'complete') return
 	loadModels()
-	classSelection()
+	//classSelection()
 }
 document.onclick = () => {
 	if (userInteracted) return
-	initAudio()
+	//initAudio()
 	userInteracted = true
 }
 document.onvisibilitychange = () => {
