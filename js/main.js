@@ -1,7 +1,8 @@
 import * as THREE from './three.module.js'
 import { GLTFLoader } from './gltfLoader.module.js'
-import { OrbitControls } from './orbitControls.js'
+/* import { OrbitControls } from './orbitControls.js' */
 import classes from './classes.js'
+import texturesLoader from './textureLoader.js'
 
 if (location.protocol.startsWith('https')) {
 	navigator.serviceWorker.register('service-worker.js')
@@ -14,13 +15,10 @@ if (location.protocol.startsWith('https')) {
 const clock = new THREE.Clock()
 const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true, preserveDrawingBuffer: true})
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-const dirLight = new THREE.DirectionalLight(0xFFFFFF, 0.5)
-const dirLight2 = new THREE.DirectionalLight(0xFFFFFF, 0.5)
+const dirLight = new THREE.DirectionalLight(0xFFFFFF, 2)
 const gltfLoader = new GLTFLoader()
-const textureLoader = new THREE.TextureLoader()
-const raycaster = new THREE.Raycaster()
 const scene = new THREE.Scene()
-const controls = new OrbitControls(camera, renderer.domElement)
+/* const controls = new OrbitControls(camera, renderer.domElement) */
 const fpsLimit = 1 / 60
 
 const progress = new Proxy({}, {
@@ -29,25 +27,22 @@ const progress = new Proxy({}, {
 		let values = Object.values(target).slice()
 		let progressbar = document.querySelector('progress')
 		let total = values.reduce((a, b) => a + b, 0)
-		total = total / 2
+		total = total / 5
 		if (progressbar) progressbar.value = parseInt(total || 0)
 		if (total >= 100) setTimeout(() => initGame(), 1000)
 		return true
 	}
 })
 
+/* controls.enableRotate = true
+controls.enableZoom = false
+controls.maxPolarAngle = (Math.PI / 2) - 0.1 */
 scene.background = null
 renderer.outputColorSpace = THREE.SRGBColorSpace
 renderer.shadowMap.enabled = true
-controls.enableRotate = true
-controls.enableZoom = false
-controls.maxPolarAngle = (Math.PI / 2) - 0.1
-dirLight.position.set(0, 1, 1)
+dirLight.position.set(0, 1, 0)
 dirLight.castShadow = true
-dirLight2.position.set(0, 1, 1)
-dirLight2.castShadow = true
 scene.add(dirLight)
-scene.add(dirLight2)
 
 var audio
 var audioContext
@@ -65,33 +60,35 @@ var clockDelta = 0
 var gameStarted = false
 var lastFrameTime = performance.now()
 var chosenClass = Object.keys(classes)[1]
+var arrow
+var energyball
 
 function loadModels() {
-	/* textureLoader.load('./textures/grass.webp', texture => {
-		texture.wrapS = THREE.MirroredRepeatWrapping
-		texture.wrapT = THREE.MirroredRepeatWrapping
-		texture.colorSpace = THREE.SRGBColorSpace
-		texture.repeat.set(5, 5)
-		const material = new THREE.MeshPhongMaterial({map: texture})
-		const ground = new THREE.Mesh(new THREE.CircleGeometry(10), material)
+	texturesLoader({
+		repeat: 10,
+		aoMapIntensity: 10,
+		displacementScale: 0.25,
+		displacementBias: -0.15,
+		normalScale: 10,
+		textures: [
+			{type: 'aoMap', texture: 'Gravel021_1K_AmbientOcclusion.jpg'},
+			{type: 'displacementMap', texture: 'Gravel021_1K_Displacement.jpg'},
+			{type: 'map', texture: 'Gravel021_1K_Color.jpg'},
+			{type: 'normalMap', texture: 'Gravel021_1K_NormalDX.jpg'}
+		]
+	})
+	.then(response => {
+		const ground = new THREE.Mesh(new THREE.PlaneGeometry(50, 50, 50, 50), response)
 		ground.rotation.x = - Math.PI / 2
 		ground.position.y -= 0.5
 		ground.receiveShadow = true
 		scene.add(ground)
 		if (!progress['ground']) progress['ground'] = 100
-	}, xhr => {
-		if (xhr.total) progress['ground'] = xhr.loaded / xhr.total * 99
-	}, error => {
-		console.error(error)
-	}) */
-	const material = new THREE.MeshPhongMaterial({color: 0x242424})
-	const ground = new THREE.Mesh(new THREE.CircleGeometry(10), material)
-	ground.rotation.x = - Math.PI / 2
-	ground.position.y -= 0.5
-	ground.receiveShadow = true
-	scene.add(ground)
-	gltfLoader.load('./models/character.glb',
-		gltf => {
+	})
+	fetch('./models/character.glb', {cache: 'force-cache'})
+	.then(response => response.arrayBuffer() )
+	.then(response => {
+		gltfLoader.parse(response, null, gltf => {
 			character = gltf.scene
 			character.name = 'character'
 			character.traverse(el => {
@@ -106,22 +103,12 @@ function loadModels() {
 				p[c.name] = character.mixer.clipAction(c)
 				return p
 			}, {})
-			character.lastAction = character.animations[classes[Object.keys(classes)[1]].idle]
+			character.lastAction = character.animations[classes[chosenClass].idle]
 			character.lastAction.play()
-			const box = new THREE.Box3().setFromObject(character)
-			const size = box.getSize(new THREE.Vector3()).length()
-			const center = box.getCenter(new THREE.Vector3())
-			object.position.x += (object.position.x - center.x)
-			object.position.y += (object.position.y - center.y)
-			object.position.z += (object.position.z - center.z)
-			dirLight.target = character
-			camera.near = size / 100
-			camera.far = size * 100
-			center.y += 0.5
-			camera.position.z += size * 0.75
-			camera.lookAt(center)
 			character.position.x += 2.75
 			character.rotation.y = Math.PI / 2 * -1
+			camera.position.z += 3
+			/* camera.position.y += 5 */
 			/* textureLoader.load('./textures/black.png', texture => {
 				texture.colorSpace = THREE.SRGBColorSpace
 				texture.flipY = false
@@ -142,10 +129,15 @@ function loadModels() {
 			if (xhr.total) progress['character'] = xhr.loaded / xhr.total * 99
 		}, error => {
 			console.error(error)
-		}
-	)
-	gltfLoader.load('./models/skeleton.glb',
-		gltf => {
+		})
+	})
+	.catch(error => {
+		console.log(error)
+	})
+	fetch('./models/skeleton.glb', {cache: 'force-cache'})
+	.then(response => response.arrayBuffer() )
+	.then(response => {
+		gltfLoader.parse(response, null, gltf => {
 			monster = gltf.scene
 			monster.name = 'monster'
 			monster.traverse(el => {
@@ -166,7 +158,6 @@ function loadModels() {
 			}, {})
 			monster.lastAction = monster.animations['idle']
 			monster.lastAction.play()
-			dirLight2.target = monster
 			monster.originalX = monster.position.x
 			monster.originalDir = monster.rotation.y
 			monster.attackDelay = 0.375
@@ -176,8 +167,61 @@ function loadModels() {
 			if (xhr.total) progress['monster'] = xhr.loaded / xhr.total * 99
 		}, error => {
 			console.error(error)
-		}
-	)
+		})
+	})
+	.catch(error => {
+		console.log(error)
+	})
+	fetch('./models/arrow.glb', {cache: 'force-cache'})
+	.then(response => response.arrayBuffer() )
+	.then(response => {
+		gltfLoader.parse(response, null, gltf => {
+			progress['arrow'] = 100
+			arrow = gltf.scene
+			arrow.traverse(el => {
+				if (el.isMesh) el.castShadow = true
+			})
+			arrow.scale.set(0.0075, 0.0075, 0.0075)
+			arrow.rotation.y = Math.PI / 2 * -1
+			arrow.position.y += 0.15
+			arrow.transparent = true
+			updateProjectiles()
+			scene.add(arrow)
+		})
+	})
+	.catch(error => {
+		console.log(error)
+	})
+	fetch('./models/energyball.glb', {cache: 'force-cache'})
+	.then(response => response.arrayBuffer() )
+	.then(response => {
+		gltfLoader.parse(response, null, gltf => {
+			progress['energyball'] = 100
+			energyball = gltf.scene
+			energyball.scale.set(0.015, 0.015, 0.015)
+			energyball.position.y += 0.1
+			energyball.transparent = true
+			const light = new THREE.PointLight(0xc800ff, 1, 2.5)
+			energyball.add(light)
+			/* textureLoader.load('./img/glow.png', texture => {
+				const spriteMaterial = new THREE.SpriteMaterial({
+					map: texture,
+					color: 0xc800ff,
+					opacity: 0.15,
+					blending: THREE.AdditiveBlending
+				})
+				const sprite = new THREE.Sprite(spriteMaterial)
+				sprite.scale.set(50, 50, 50)
+				sprite.name = 'glow'
+				energyball.add(sprite)
+			}) */
+			updateProjectiles()
+			scene.add(energyball)
+		})
+	})
+	.catch(error => {
+		console.log(error)
+	})
 }
 
 function initGame() {
@@ -207,15 +251,17 @@ function animate() {
 	character.mixer.update(clockDelta)
 	monster.mixer.update(clockDelta)
 	renderer.render(scene, camera)
-	controls.update()
+	/* controls.update() */
 	updateFPSCounter()
-	updateMovement(character)
-	updateMovement(monster)
+	updateProjectiles()
+	if (character.isWalking) updateMovement(character)
+	if (monster.isWalking) updateMovement(monster)
+	if (character.isFiring) updateProjectile(character)
 	clockDelta = fpsLimit ? clockDelta % fpsLimit : clockDelta
 }
 
 function executeCrossFade(target, newAction, loop='repeat') {
-	if (character.lastAction == newAction) return newAction.reset()
+	//if (character.lastAction == newAction) return newAction.reset()
 	newAction.enabled = true
 	newAction.setEffectiveTimeScale(1)
 	newAction.setEffectiveWeight(1)
@@ -254,7 +300,42 @@ function updateFPSCounter() {
 }
 
 function attack() {
-	const animation = character.animations[classes[chosenClass].run ?? classes[general].run]
+	if (character.isFiring || character.isWalking || character.isAttacking) return
+	document.querySelector('select').disabled = true
+	document.querySelector('main button').disabled = true
+	let animation, delay
+	if (chosenClass == 'arco' && !character.isFiring) {
+		arrow.position.x = character.position.x
+		animation = character.animations[classes[chosenClass].load]
+		executeCrossFade(character, animation, 'once')
+		animation = character.animations[classes[chosenClass].idleArmed]
+		synchronizeCrossFade(character, animation, 'once')
+		animation = character.animations[classes[chosenClass].attack1]
+		synchronizeCrossFade(character, animation, 'once')
+		delay = animation.getClip().duration * 1000
+		setTimeout(() => {
+			playSE(ses['bow'])
+			arrow.transparent = false
+			character.isFiring = 'arrow'
+		}, delay * 0.75)
+		animation = character.animations[classes[chosenClass].idle]
+		synchronizeCrossFade(character, animation)
+		return
+	} else if (chosenClass == 'cajado' && !character.isFiring) {
+		energyball.position.x = character.position.x
+		animation = character.animations[classes[chosenClass].attack1]
+		executeCrossFade(character, animation, 'once')
+		delay = animation.getClip().duration * 1000
+		setTimeout(() => {
+			playSE(ses['energyball'])
+			energyball.transparent = false
+			character.isFiring = 'energyball'
+		}, delay * 0.25)
+		animation = character.animations[classes[chosenClass].idle]
+		synchronizeCrossFade(character, animation)
+		return
+	}
+	animation = character.animations[classes[chosenClass].run ?? classes[general].run]
 	executeCrossFade(character, animation)
 	character.isWalking = true
 	/* const animation = monster.animations['run']
@@ -263,25 +344,28 @@ function attack() {
 }
 
 function updateMovement(target) {
-	if (!target.isWalking) return
-	let animation
+	let animation, delay
 	const opponent = target.name == 'character' ? monster : character
 	const reached = Math.max(target.position.x, opponent.position.x) - Math.min(target.position.x, opponent.position.x)
 	if (target.isReturning) {
 		if (target.position.x == target.originalX) {
 			animation = target.name == 'character' ? target.animations[classes[chosenClass].idle ?? classes['general'].idle] : target.animations['idle']
+			delay = animation.getClip().duration * 1000
 			executeCrossFade(target, animation)
 			target.rotation.y = target.originalDir
 			target.isWalking = false
 			target.isReturning = false
 			target.isAttacking = false
+			setTimeout(() => {
+				document.querySelector('select').disabled = false
+				document.querySelector('main button').disabled = false
+			}, delay)
 		} else {
 			if (target.rotation.y == target.originalDir) target.rotation.y = target.originalDir * -1
 			target.position.x > target.originalX ? target.position.x -= 0.1 : target.position.x += 0.1
 		}
-	} else if (reached <= 0.8) {
+	} else if (reached <= 1) {
 		if (!target.isAttacking) {
-			let delay
 			animation = target.name == 'character' ? target.animations[classes[chosenClass].attack1 ?? classes['general'].attack1] : target.animations['attack1']
 			executeCrossFade(target, animation, 'once')
 			delay = animation.getClip().duration * 1000
@@ -303,6 +387,54 @@ function updateMovement(target) {
 		}
 	} else {
 		target.position.x > opponent.position.x ? target.position.x -= 0.1 : target.position.x += 0.1
+	}
+}
+
+function updateProjectile(target) {
+	const projectile = target.isFiring == 'arrow' ? arrow : energyball
+	const opponent = target.name == 'character' ? monster : character
+	const reached = Math.max(projectile.position.x, opponent.position.x) - Math.min(projectile.position.x, opponent.position.x)
+	if (reached <= 0.5) {
+		projectile.transparent = true
+		target.name == 'character' ? playSE(ses['zombieYell']) : playSE(ses['humanYell'])
+		let animation = opponent.name == 'character' ? opponent.animations[classes[chosenClass].hit ?? classes['general'].hit] : opponent.animations['hit']
+		let delay = animation.getClip().duration * 1000
+		executeCrossFade(opponent, animation, 'once')
+		target.isFiring = false
+		setTimeout(() => {
+			document.querySelector('select').disabled = false
+			document.querySelector('main button').disabled = false
+		}, delay)
+	} else {
+		projectile.position.x > opponent.position.x ? projectile.position.x -= 0.25 : projectile.position.x += 0.25
+	}
+}
+
+function updateProjectiles() {
+	if (arrow && arrow.oldTransparent != arrow.transparent) {
+		arrow.traverse(el => {
+			if (el.isMesh) {
+				if (arrow.transparent) el.scale.set(0, 0, 0)
+				else el.scale.set(1, 1, 1)
+			}
+		})
+		arrow.oldTransparent = arrow.transparent
+	}
+	if (energyball && energyball.oldTransparent != energyball.transparent) {
+		energyball.traverse(el => {
+			if (el.isMesh) {
+				if (energyball.transparent) el.scale.set(0, 0, 0)
+				else el.scale.set(1, 1, 1)
+			} else if (el.type == 'PointLight') {
+				el.intensity = energyball.transparent ? 0 : 0.5
+			}
+		})
+		energyball.oldTransparent = energyball.transparent
+	}
+	if (energyball && !energyball.transparent) {
+		energyball.rotation.x += Math.PI / 50
+		energyball.rotation.y += Math.PI / 50
+		energyball.rotation.z += Math.PI / 50
 	}
 }
 
@@ -340,6 +472,7 @@ function classSelection() {
 			if (character.lastAction.loop == THREE.LoopOnce) synchronizeCrossFade(character, animation)
 			else executeCrossFade(character, animation)
 		}, 200)
+		localStorage.setItem('chosenClass', chosenClass)
 	}
 	function playSe() {
 		let se = null
@@ -374,7 +507,7 @@ function initAudio() {
 			})
 		})
 	})
-	const seList = ['bow', 'great-sword', 'stick', 'sword', 'humanYell', 'zombieYell']
+	const seList = ['bow', 'great-sword', 'stick', 'sword', 'energyball', 'humanYell', 'zombieYell']
 	seList.forEach(el => {
 		fetch(`./audio/se/${el}.mp3`)
 		.then(response => {
@@ -432,6 +565,15 @@ document.onvisibilitychange = () => {
 }
 document.body.appendChild(renderer.domElement)
 
-document.addEventListener('click',  () => {
+document.addEventListener('click', () => {
 	initAudio()
+	if (navigator.standalone) return
+	if (document.fullscreenElement) return
+	if (['127.0.0.1', 'localhost'].includes(location.hostname)) return
+	if (!'requestFullscreen' in document.documentElement) return
+	document.documentElement.requestFullscreen({navigationUI: 'hide'})
+	.then(() => {
+		return screen.orientation.lock('landscape')
+	})
+	.catch(e => {})
 }, {once: true})

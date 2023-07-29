@@ -46,9 +46,11 @@ export default {
 		attack1: 'attack1(stick)'
 	},
 	arco: {
-		idle: 'bow_IDLE_ARMED',
+		idle: 'bow_IDLE',
+		idleArmed: 'bow_IDLE_ARMED',
 		walk: 'walk(bow)',
 		run: 'bow_RUN',
+		load: 'bow_LOAD',
 		attack1: 'bow_FIRE',
 		hit: 'bow_HIT',
 		load: 'bow_LOAD',

@@ -32,10 +32,11 @@ body {
 	height: 100vh;
 	color: whitesmoke;
 }
-/* body.loaded {
-	background-image: url("./textures/sky.webp");
+body.loaded {
+	background-image: url("./textures/nightsky.jpg");
+	background-position: top left;
 	background-size: cover;
-} */
+}
 main {
 	position: fixed;
 	width: 200px;
@@ -67,7 +68,7 @@ select, option, input[type=text] {
 	background-color: rgba(0, 0, 0, 0.5);
 	color: whitesmoke;
 }
-select, option, button {
+select:not(:disabled), option, button:not(:disabled) {
 	cursor: pointer;
 }
 input[type=text], select {
