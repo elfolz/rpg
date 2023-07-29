@@ -10,7 +10,7 @@ export default (args) => {
 		if (!availableTextureTypes.includes(el.type)) return
 		process.push(
 			new Promise((resolve, reject) => {
-				textureLoader.load(`../textures/${el.texture}`, texture => {
+				textureLoader.load(`./textures/${el.texture}`, texture => {
 					texture.materialType = el.type
 					texture.colorSpace = SRGBColorSpace
 					texture.wrapS = RepeatWrapping
