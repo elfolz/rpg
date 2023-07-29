@@ -32,10 +32,10 @@ body {
 	height: 100vh;
 	color: whitesmoke;
 }
-body.loaded {
+/* body.loaded {
 	background-image: url("./textures/sky.webp");
 	background-size: cover;
-}
+} */
 main {
 	position: fixed;
 	width: 200px;

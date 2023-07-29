@@ -11,7 +11,7 @@ export default {
 		death: 'move_DEATH',
 		fall: 'fall'
 	},
-	guerreiro: {
+	'espada curta': {
 		idle: 'idle(shield)',
 		walk: 'walk(shield)',
 		run: 'small_sword_shield_RUN',
@@ -25,7 +25,7 @@ export default {
 		jump_end: 'reception(shield)',
 		fall: 'fall(shield)'
 	},
-	paladino: {
+	'espada grande': {
 		idle: 'idle(WeaponTwoHand)',
 		walk: 'walk(WeaponTwoHand)',
 		run: 'small_sword_RUN',
@@ -39,13 +39,13 @@ export default {
 		jump_end: 'reception(WeaponTwoHand)',
 		fall: 'fall(WeaponTwoHand)'
 	},
-	mago: {
+	cajado: {
 		idle: 'idle(stick)',
 		walk: 'walk(stick)',
 		run: 'stick_RUN',
 		attack1: 'attack1(stick)'
 	},
-	arqueiro: {
+	arco: {
 		idle: 'bow_IDLE_ARMED',
 		walk: 'walk(bow)',
 		run: 'bow_RUN',

@@ -14,10 +14,11 @@ if (location.protocol.startsWith('https')) {
 const clock = new THREE.Clock()
 const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true, preserveDrawingBuffer: true})
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-const hemisphereLight = new THREE.HemisphereLight(0xFFFFFF, 0xFFFFFF, 0.5)
 const dirLight = new THREE.DirectionalLight(0xFFFFFF, 0.5)
+const dirLight2 = new THREE.DirectionalLight(0xFFFFFF, 0.5)
 const gltfLoader = new GLTFLoader()
 const textureLoader = new THREE.TextureLoader()
+const raycaster = new THREE.Raycaster()
 const scene = new THREE.Scene()
 const controls = new OrbitControls(camera, renderer.domElement)
 const fpsLimit = 1 / 60
@@ -41,33 +42,32 @@ renderer.shadowMap.enabled = true
 controls.enableRotate = true
 controls.enableZoom = false
 controls.maxPolarAngle = (Math.PI / 2) - 0.1
-dirLight.position.set(0, 1, 0)
+dirLight.position.set(0, 1, 1)
 dirLight.castShadow = true
+dirLight2.position.set(0, 1, 1)
+dirLight2.castShadow = true
 scene.add(dirLight)
-scene.add(hemisphereLight)
+scene.add(dirLight2)
 
 var audio
 var audioContext
 var bgmGain
 var seGain
 var character
+var monster
 var object
-var mixer
-var lastAction
 var bgmBuffer
 var bgmSource
-var animations = []
 var ses = []
 var fps = 0
 var frames = 0
 var clockDelta = 0
 var gameStarted = false
-var userInteracted = false
 var lastFrameTime = performance.now()
 var chosenClass = Object.keys(classes)[1]
 
 function loadModels() {
-	textureLoader.load('./textures/grass.webp', texture => {
+	/* textureLoader.load('./textures/grass.webp', texture => {
 		texture.wrapS = THREE.MirroredRepeatWrapping
 		texture.wrapT = THREE.MirroredRepeatWrapping
 		texture.colorSpace = THREE.SRGBColorSpace
@@ -80,14 +80,20 @@ function loadModels() {
 		scene.add(ground)
 		if (!progress['ground']) progress['ground'] = 100
 	}, xhr => {
-		progress['ground'] = xhr.loaded / (xhr.total || 1) * 99 / 2
+		if (xhr.total) progress['ground'] = xhr.loaded / xhr.total * 99
 	}, error => {
 		console.error(error)
-	})
+	}) */
+	const material = new THREE.MeshPhongMaterial({color: 0x242424})
+	const ground = new THREE.Mesh(new THREE.CircleGeometry(10), material)
+	ground.rotation.x = - Math.PI / 2
+	ground.position.y -= 0.5
+	ground.receiveShadow = true
+	scene.add(ground)
 	gltfLoader.load('./models/character.glb',
 		gltf => {
 			character = gltf.scene
-			animations = gltf.animations
+			character.name = 'character'
 			character.traverse(el => {
 				if (el.isMesh) el.castShadow = true
 				if (el.name == 'Object_11') object = el
@@ -95,9 +101,13 @@ function loadModels() {
 			})
 			character.colorSpace = THREE.SRGBColorSpace
 			character.position.y -= 0.5
-			mixer = new THREE.AnimationMixer(character)
-			lastAction = mixer.clipAction(animations.find(el => el.name == classes[Object.keys(classes)[1]].idle))
-			lastAction.play()
+			character.mixer = new THREE.AnimationMixer(character)
+			character.animations = gltf.animations.reduce((p, c) => {
+				p[c.name] = character.mixer.clipAction(c)
+				return p
+			}, {})
+			character.lastAction = character.animations[classes[Object.keys(classes)[1]].idle]
+			character.lastAction.play()
 			const box = new THREE.Box3().setFromObject(character)
 			const size = box.getSize(new THREE.Vector3()).length()
 			const center = box.getCenter(new THREE.Vector3())
@@ -108,13 +118,62 @@ function loadModels() {
 			camera.near = size / 100
 			camera.far = size * 100
 			center.y += 0.5
-			camera.position.z += size * 0.65
+			camera.position.z += size * 0.75
 			camera.lookAt(center)
+			character.position.x += 2.75
+			character.rotation.y = Math.PI / 2 * -1
+			/* textureLoader.load('./textures/black.png', texture => {
+				texture.colorSpace = THREE.SRGBColorSpace
+				texture.flipY = false
+				character.traverse(el => {
+					if (el.name == 'Object_11') el.material.map = texture
+				})
+			}) */
+			character.hitbox = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2, 0.25), new THREE.MeshBasicMaterial({visible: false, color: 0x00ff00}))
+			character.add(character.hitbox)
+			character.hitbox.geometry.computeBoundingBox()
+			character.originalX = character.position.x
+			character.originalDir = character.rotation.y
+			character.attackDelay = 0.35
 			scene.add(character)
 			progress['character'] = 100
 			initGame()
 		}, xhr => {
-			progress['character'] = xhr.loaded / (xhr.total || 1) * 99
+			if (xhr.total) progress['character'] = xhr.loaded / xhr.total * 99
+		}, error => {
+			console.error(error)
+		}
+	)
+	gltfLoader.load('./models/skeleton.glb',
+		gltf => {
+			monster = gltf.scene
+			monster.name = 'monster'
+			monster.traverse(el => {
+				if (el.isMesh) el.castShadow = true
+			})
+			monster.colorSpace = THREE.SRGBColorSpace
+			monster.position.y -= 0.5
+			monster.position.x -= 3
+			monster.rotation.y = Math.PI / 2
+			monster.scale.set(0.35, 0.35, 0.35)
+			monster.hitbox = new THREE.Mesh(new THREE.BoxGeometry(0.75, 5.25, 0.75), new THREE.MeshBasicMaterial({visible: false, color: 0x00ff00}))
+			monster.add(monster.hitbox)
+			monster.hitbox.geometry.computeBoundingBox()
+			monster.mixer = new THREE.AnimationMixer(monster)
+			monster.animations = gltf.animations.reduce((p, c) => {
+				p[c.name] = monster.mixer.clipAction(c)
+				return p
+			}, {})
+			monster.lastAction = monster.animations['idle']
+			monster.lastAction.play()
+			dirLight2.target = monster
+			monster.originalX = monster.position.x
+			monster.originalDir = monster.rotation.y
+			monster.attackDelay = 0.375
+			scene.add(monster)
+			progress['monster'] = 100
+		}, xhr => {
+			if (xhr.total) progress['monster'] = xhr.loaded / xhr.total * 99
 		}, error => {
 			console.error(error)
 		}
@@ -128,6 +187,7 @@ function initGame() {
 	document.body.removeChild(document.querySelector('figure'))
 	document.querySelector('main').style.removeProperty('display')
 	document.querySelector('#fps').style.removeProperty('display')
+	document.querySelector('main button').onclick = () => attack()
 	resizeScene()
 	animate()
 }
@@ -144,50 +204,107 @@ function animate() {
 	if (document.hidden) return
 	clockDelta += clock.getDelta()
 	if (fpsLimit && clockDelta < fpsLimit) return
-	mixer.update(clockDelta)
+	character.mixer.update(clockDelta)
+	monster.mixer.update(clockDelta)
 	renderer.render(scene, camera)
 	controls.update()
 	updateFPSCounter()
+	updateMovement(character)
+	updateMovement(monster)
 	clockDelta = fpsLimit ? clockDelta % fpsLimit : clockDelta
 }
 
-function executeCrossFade(newAction, loop='repeat') {
-	if (lastAction == newAction) return newAction.reset()
+function executeCrossFade(target, newAction, loop='repeat') {
+	if (character.lastAction == newAction) return newAction.reset()
 	newAction.enabled = true
 	newAction.setEffectiveTimeScale(1)
 	newAction.setEffectiveWeight(1)
 	newAction.loop = loop == 'pingpong' ? THREE.LoopPingPong : loop == 'once' ? THREE.LoopOnce : THREE.LoopRepeat
 	newAction.clampWhenFinished = loop == 'once'
 	if (loop == 'once') newAction.reset()
-	lastAction.crossFadeTo(newAction, 0.25, true)
-	lastAction = newAction
+	target.lastAction.crossFadeTo(newAction, 0.25, true)
+	target.lastAction = newAction
 	newAction.play()
 }
 
-function synchronizeCrossFade(newAction, loop='repeat') {
-	mixer.addEventListener('finished', onLoopFinished)
+function synchronizeCrossFade(target, newAction, loop='repeat', callback) {
+	target.mixer.addEventListener('finished', onLoopFinished)
 	function onLoopFinished() {
-		mixer.removeEventListener('finished', onLoopFinished)
-		executeCrossFade(newAction, loop)
+		target.mixer.removeEventListener('finished', onLoopFinished)
+		executeCrossFade(target, newAction, loop)
+		if (callback) callback()
 	}
 }
 
 function updateFPSCounter() {
-		frames++
-		if (performance.now() < lastFrameTime + 1000) return
-		fps = Math.round(( frames * 1000 ) / ( performance.now() - lastFrameTime ))
-		if (!Number.isNaN(fps)) {
-			let ctx = document.querySelector('#fps').getContext('2d')
-			ctx.font = 'bold 20px sans-serif'
-			ctx.textAlign = 'end'
-			ctx.textBaseline = 'middle'
-			ctx.fillStyle = 'rgba(255,255,255,0.25)'
-			ctx.clearRect(0, 0, 80, 20)
-			ctx.fillText(`${fps} FPS`, 80, 10)
-		}
-		lastFrameTime = performance.now()
-		frames = 0
+	frames++
+	if (performance.now() < lastFrameTime + 1000) return
+	fps = Math.round(( frames * 1000 ) / ( performance.now() - lastFrameTime ))
+	if (!Number.isNaN(fps)) {
+		let ctx = document.querySelector('#fps').getContext('2d')
+		ctx.font = 'bold 20px sans-serif'
+		ctx.textAlign = 'end'
+		ctx.textBaseline = 'middle'
+		ctx.fillStyle = 'rgba(255,255,255,0.25)'
+		ctx.clearRect(0, 0, 80, 20)
+		ctx.fillText(`${fps} FPS`, 80, 10)
 	}
+	lastFrameTime = performance.now()
+	frames = 0
+}
+
+function attack() {
+	const animation = character.animations[classes[chosenClass].run ?? classes[general].run]
+	executeCrossFade(character, animation)
+	character.isWalking = true
+	/* const animation = monster.animations['run']
+	executeCrossFade(monster, animation)
+	monster.isWalking = true */
+}
+
+function updateMovement(target) {
+	if (!target.isWalking) return
+	let animation
+	const opponent = target.name == 'character' ? monster : character
+	const reached = Math.max(target.position.x, opponent.position.x) - Math.min(target.position.x, opponent.position.x)
+	if (target.isReturning) {
+		if (target.position.x == target.originalX) {
+			animation = target.name == 'character' ? target.animations[classes[chosenClass].idle ?? classes['general'].idle] : target.animations['idle']
+			executeCrossFade(target, animation)
+			target.rotation.y = target.originalDir
+			target.isWalking = false
+			target.isReturning = false
+			target.isAttacking = false
+		} else {
+			if (target.rotation.y == target.originalDir) target.rotation.y = target.originalDir * -1
+			target.position.x > target.originalX ? target.position.x -= 0.1 : target.position.x += 0.1
+		}
+	} else if (reached <= 0.8) {
+		if (!target.isAttacking) {
+			let delay
+			animation = target.name == 'character' ? target.animations[classes[chosenClass].attack1 ?? classes['general'].attack1] : target.animations['attack1']
+			executeCrossFade(target, animation, 'once')
+			delay = animation.getClip().duration * 1000
+			setTimeout(() => {
+				playSE(ses['sword'])
+				setTimeout(() => {
+					target.name == 'character' ? playSE(ses['zombieYell']) : playSE(ses['humanYell'])
+					animation = opponent.name == 'character' ? opponent.animations[classes[chosenClass].hit ?? classes['general'].hit] : opponent.animations['hit']
+					executeCrossFade(opponent, animation, 'once')
+					animation = opponent.name == 'character' ? opponent.animations[classes[chosenClass].idle ?? classes['general'].idle] : opponent.animations['idle']
+					synchronizeCrossFade(opponent, animation)
+				}, ses['sword'] * 500)
+			}, delay * target.attackDelay)
+			animation = target.name == 'character' ? character.animations[classes[chosenClass].run ?? classes[general].run] : target.animations['run']
+			synchronizeCrossFade(target, animation, 'repeat', () => {
+				target.isReturning = true
+			})
+			target.isAttacking = true
+		}
+	} else {
+		target.position.x > opponent.position.x ? target.position.x -= 0.1 : target.position.x += 0.1
+	}
+}
 
 function classSelection() {
 	Object.keys(classes).forEach(el => {
@@ -200,21 +317,18 @@ function classSelection() {
 	document.querySelector('select').oninput = e => {
 		let animationName
 		let animation
-		let clip
 		animationName = classes[chosenClass].stow
 		if (animationName) {
-			animation = animations.find(el => el.name == animationName)
-			clip = mixer.clipAction(animation)
-			executeCrossFade(clip, 'once')
+			animation = character.animations[animationName]
+			executeCrossFade(character, animation, 'once')
 		}
 		playSe()
 		chosenClass = e.target.value
 		animationName = classes[chosenClass].take
 		if (animationName) {
 			setTimeout(() => {
-				animation = animations.find(el => el.name == animationName)
-				clip = mixer.clipAction(animation)
-				synchronizeCrossFade(clip, 'once')
+				animation = character.animations[animationName]
+				synchronizeCrossFade(character, animation, 'once')
 			}, 100)
 			setTimeout(() => {playSe()}, 400)
 		} else if (chosenClass == 'mago') {
@@ -222,10 +336,9 @@ function classSelection() {
 		}
 		setTimeout(() => {
 			animationName = classes[chosenClass].idle
-			animation = animations.find(el => el.name == animationName)
-			clip = mixer.clipAction(animation)
-			if (lastAction.loop == THREE.LoopOnce) synchronizeCrossFade(clip)
-			else executeCrossFade(clip)
+			animation = character.animations[animationName]
+			if (character.lastAction.loop == THREE.LoopOnce) synchronizeCrossFade(character, animation)
+			else executeCrossFade(character, animation)
 		}, 200)
 	}
 	function playSe() {
@@ -250,7 +363,7 @@ function initAudio() {
 	seGain.connect(audioContext.destination)
 	audio.srcObject = destination.stream
 	audio.play()
-	fetch('./audio/bgm/bgm.mp3')
+	fetch('./audio/bgm/battle.mp3')
 	.then(response => {
 		response.arrayBuffer()
 		.then(buffer => {
@@ -261,7 +374,7 @@ function initAudio() {
 			})
 		})
 	})
-	const seList = ['bow', 'great-sword', 'stick', 'sword']
+	const seList = ['bow', 'great-sword', 'stick', 'sword', 'humanYell', 'zombieYell']
 	seList.forEach(el => {
 		fetch(`./audio/se/${el}.mp3`)
 		.then(response => {
@@ -313,13 +426,12 @@ document.onreadystatechange = () => {
 	loadModels()
 	classSelection()
 }
-document.onclick = () => {
-	if (userInteracted) return
-	initAudio()
-	userInteracted = true
-}
 document.onvisibilitychange = () => {
 	if (document.hidden) stopBGM()
 	else playBGM()
 }
 document.body.appendChild(renderer.domElement)
+
+document.addEventListener('click',  () => {
+	initAudio()
+}, {once: true})
