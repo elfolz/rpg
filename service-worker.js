@@ -1,6 +1,4 @@
-self.addEventListener('install', event => {
-	self.skipWaiting()
-})
+self.skipWaiting()
 
 self.addEventListener('fetch', event => {
 	event.respondWith(caches.open('rpg').then(cache => {
