@@ -1,4 +1,4 @@
-import { TextureLoader, SRGBColorSpace, RepeatWrapping, MeshLambertMaterial, Vector2 } from './three.module.js'
+import { TextureLoader, SRGBColorSpace, RepeatWrapping, MeshLambertMaterial, Vector2 } from '../modules/three.module.js'
 
 const availableTextureTypes = ['aoMap', 'emissiveMap', 'displacementMap', 'map', 'normalMap', 'specularMap']
 const process = []
@@ -10,7 +10,7 @@ export default (args) => {
 		if (!availableTextureTypes.includes(el.type)) return
 		process.push(
 			new Promise((resolve, reject) => {
-				textureLoader.load(`./textures/${el.texture}`, texture => {
+				textureLoader.load(`/textures/${el.texture}`, texture => {
 					texture.materialType = el.type
 					texture.colorSpace = SRGBColorSpace
 					texture.wrapS = RepeatWrapping

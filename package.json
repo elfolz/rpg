@@ -2,11 +2,21 @@
 	"name": "rpg",
 	"version": "1.0.0",
 	"scripts": {
-		"serve": "http-server ./ -p 8090 -c-1 -g",
-		"adb:c": "adb connect 192.168.0.132:42967",
-		"adb:d": "adb disconnect 192.168.0.132:42967"
+		"serve": "webpack serve --mode=development",
+		"build": "webpack --mode=production"
 	},
 	"devDependencies": {
-		"http-server": "^14.1.1"
+		"copy-webpack-plugin": "^11.0.0",
+		"css-loader": "^6.8.1",
+		"html-webpack-injector": "^1.1.4",
+		"html-webpack-plugin": "^5.5.3",
+		"mini-css-extract-plugin": "^2.7.6",
+		"sass": "^1.63.6",
+		"sass-loader": "^13.3.2",
+		"terser-webpack-plugin": "^5.3.9",
+		"webpack": "^5.86.0",
+		"webpack-cli": "^5.1.4",
+		"webpack-dev-server": "^4.15.1",
+		"workbox-webpack-plugin": "^7.0.0"
 	}
 }
