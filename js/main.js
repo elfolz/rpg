@@ -14,8 +14,10 @@ if (location.protocol.startsWith('https')) {
 
 const clock = new THREE.Clock()
 const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true, preserveDrawingBuffer: true})
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-const dirLight = new THREE.DirectionalLight(0xFFFFFF, 2)
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000)
+const dirLight = new THREE.DirectionalLight(0xFFFFFF, 1)
+const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.1)
+const textureLoader = new THREE.TextureLoader()
 const gltfLoader = new GLTFLoader()
 const scene = new THREE.Scene()
 /* const controls = new OrbitControls(camera, renderer.domElement) */
@@ -40,9 +42,10 @@ controls.maxPolarAngle = (Math.PI / 2) - 0.1 */
 scene.background = null
 renderer.outputColorSpace = THREE.SRGBColorSpace
 renderer.shadowMap.enabled = true
-dirLight.position.set(0, 1, 0)
+dirLight.position.set(0, 3, -1)
 dirLight.castShadow = true
 scene.add(dirLight)
+scene.add(ambientLight)
 
 var audio
 var audioContext
@@ -62,14 +65,17 @@ var lastFrameTime = performance.now()
 var chosenClass = Object.keys(classes)[1]
 var arrow
 var energyball
+var blockInteraction = false
 
 function loadModels() {
 	texturesLoader({
-		repeat: 10,
-		aoMapIntensity: 10,
-		displacementScale: 0.25,
-		displacementBias: -0.15,
-		normalScale: 10,
+		attributes: {
+			repeat: 20,
+			normalScale: 1.5,
+			aoMapIntensity: 5,
+			displacementScale: 0.25,
+			displacementBias: -0.01,
+		},
 		textures: [
 			{type: 'aoMap', texture: 'Gravel021_1K_AmbientOcclusion.jpg'},
 			{type: 'displacementMap', texture: 'Gravel021_1K_Displacement.jpg'},
@@ -107,8 +113,7 @@ function loadModels() {
 			character.lastAction.play()
 			character.position.x += 2.75
 			character.rotation.y = Math.PI / 2 * -1
-			camera.position.z += 3
-			/* camera.position.y += 5 */
+			camera.position.z = character.position.z + (window.innerWidth > window.innerHeight ? 4 : 14)
 			/* textureLoader.load('./textures/black.png', texture => {
 				texture.colorSpace = THREE.SRGBColorSpace
 				texture.flipY = false
@@ -201,13 +206,13 @@ function loadModels() {
 			energyball.scale.set(0.015, 0.015, 0.015)
 			energyball.position.y += 0.1
 			energyball.transparent = true
-			const light = new THREE.PointLight(0xc800ff, 1, 2.5)
+			const light = new THREE.PointLight(0xc800ff, 10, 5)
 			energyball.add(light)
 			/* textureLoader.load('./img/glow.png', texture => {
 				const spriteMaterial = new THREE.SpriteMaterial({
 					map: texture,
 					color: 0xc800ff,
-					opacity: 0.15,
+					opacity: 0.25,
 					blending: THREE.AdditiveBlending
 				})
 				const sprite = new THREE.Sprite(spriteMaterial)
@@ -238,6 +243,7 @@ function initGame() {
 
 function resizeScene() {
 	camera.aspect = window.innerWidth / window.innerHeight
+	camera.position.z = character.position.z + (window.innerWidth > window.innerHeight ? 4 : 14)
 	camera.updateProjectionMatrix()
 	renderer.setPixelRatio(window.devicePixelRatio)
 	renderer.setSize(window.innerWidth, window.innerHeight)
@@ -300,7 +306,7 @@ function updateFPSCounter() {
 }
 
 function attack() {
-	if (character.isFiring || character.isWalking || character.isAttacking) return
+	if (blockInteraction || character.isFiring || character.isWalking || character.isAttacking) return
 	document.querySelector('select').disabled = true
 	document.querySelector('main button').disabled = true
 	let animation, delay
@@ -414,17 +420,15 @@ function updateProjectiles() {
 	if (arrow && arrow.oldTransparent != arrow.transparent) {
 		arrow.traverse(el => {
 			if (el.isMesh) {
-				if (arrow.transparent) el.scale.set(0, 0, 0)
-				else el.scale.set(1, 1, 1)
+				arrow.transparent ? el.scale.set(0, 0, 0) : el.scale.set(1, 1, 1)
 			}
 		})
 		arrow.oldTransparent = arrow.transparent
 	}
 	if (energyball && energyball.oldTransparent != energyball.transparent) {
 		energyball.traverse(el => {
-			if (el.isMesh) {
-				if (energyball.transparent) el.scale.set(0, 0, 0)
-				else el.scale.set(1, 1, 1)
+			if (el.isMesh || el.isSprite) {
+				energyball.transparent ? el.scale.set(0, 0, 0) : el.scale.set(1, 1, 1)
 			} else if (el.type == 'PointLight') {
 				el.intensity = energyball.transparent ? 0 : 0.5
 			}
@@ -447,12 +451,16 @@ function classSelection() {
 		document.querySelector('select').appendChild(option)
 	})
 	document.querySelector('select').oninput = e => {
-		let animationName
-		let animation
+		let animationName, animation, delay
 		animationName = classes[chosenClass].stow
 		if (animationName) {
 			animation = character.animations[animationName]
 			executeCrossFade(character, animation, 'once')
+			delay = animation.getClip().duration * 1000
+			blockInteraction = true
+			setTimeout(() => {
+				blockInteraction = false
+			}, delay)
 		}
 		playSe()
 		chosenClass = e.target.value
@@ -461,6 +469,11 @@ function classSelection() {
 			setTimeout(() => {
 				animation = character.animations[animationName]
 				synchronizeCrossFade(character, animation, 'once')
+				delay = animation.getClip().duration * 1000
+				blockInteraction = true
+				setTimeout(() => {
+					blockInteraction = false
+				}, delay)
 			}, 100)
 			setTimeout(() => {playSe()}, 400)
 		} else if (chosenClass == 'mago') {
@@ -471,6 +484,11 @@ function classSelection() {
 			animation = character.animations[animationName]
 			if (character.lastAction.loop == THREE.LoopOnce) synchronizeCrossFade(character, animation)
 			else executeCrossFade(character, animation)
+			delay = animation.getClip().duration * 1000
+			blockInteraction = true
+			setTimeout(() => {
+				blockInteraction = false
+			}, delay)
 		}, 200)
 		localStorage.setItem('chosenClass', chosenClass)
 	}

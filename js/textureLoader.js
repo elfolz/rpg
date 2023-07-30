@@ -15,7 +15,7 @@ export default (args) => {
 					texture.colorSpace = SRGBColorSpace
 					texture.wrapS = RepeatWrapping
 					texture.wrapT = RepeatWrapping
-					if (args.repeat) texture.repeat.set(args.repeat, args.repeat)
+					if (args.attributes.repeat) texture.repeat.set(args.attributes.repeat, args.attributes.repeat)
 					resolve(texture)
 				}, undefined, error => {
 					reject(error)
@@ -27,12 +27,14 @@ export default (args) => {
 		Promise.all(process)
 		.then(response => {
 			const material = new MeshLambertMaterial()
-			if (args.aoMapIntensity) material.aoMapIntensity = args.aoMapIntensity
-			if (args.emissiveIntensity) material.emissiveIntensity = args.emissiveIntensity
-			if (args.displacementScale) material.displacementScale = args.displacementScale
-			if (args.displacementBias) material.displacementBias = args.displacementBias
-			if (typeof args.normalScale == 'object') material.normalScale = new Vector2(args.normalScale[0], args.normalScale[1])
-			if (typeof args.normalScale == 'number') material.normalScale = new Vector2(args.normalScale, args.normalScale)
+			Object.entries(args.attributes).forEach(el => {
+				if (el[0] == 'normalScale') {
+					if (typeof el[1] == 'object') material[el[0]] = new Vector2(el[1][0], el[1][1])
+					if (typeof el[1] == 'number') material[el[0]] = new Vector2(el[1], el[1])
+				} else {
+					material[el[0]] = el[1]
+				}
+			})
 			response.forEach(el => {
 				material[el.materialType] = el
 			})
