@@ -1,10 +1,10 @@
 'use strict'
 
 import './stylesheet.scss'
+import './gui.js'
 
 import { Sound } from './classes/sound.js'
 import { Game } from './classes/game.js'
-import './gui.js'
 
 window.sound = new Sound()
 window.game = new Game()

@@ -27,12 +27,12 @@ function initGUI() {
 	document.querySelector('main button').onclick = () => window.game.player.attack()
 }
 
-function lockScreen() {
-	if (document.hidden) return
+function toggleLockScreen() {
+	if (document.hidden) return wakeLockObj?.release()
 	if ('wakeLock' in navigator) navigator.wakeLock.request('screen').then(el => wakeLockObj = el)
 }
 
-window.setFullscreen = () => {
+function setFullscreen() {
 	if (navigator.standalone) return
 	if (document.fullscreenElement) return
 	if (['127.0.0.1', 'localhost'].includes(location.hostname)) return
@@ -47,23 +47,17 @@ window.setFullscreen = () => {
 document.onvisibilitychange = () => {
 	window.game?.toggleVisibility()
 	window.sound?.toggleVisibility()
-	if (document.hidden) {
-		document.querySelectorAll('footer section button').forEach(el => {
-			el.classList.remove('active')
-		})
-		if (wakeLockObj) wakeLockObj.release()
-	} else {
-		lockScreen()
-	}
+	toggleLockScreen()
 }
-
-document.onreadystatechange = () => { if (document.readyState == 'complete') initGUI() }
-window.oncontextmenu = e => { e.preventDefault(); return false }
-window.onresize = () => { window.game?.resizeScene() }
-
+document.onreadystatechange = () => {
+	if (document.readyState == 'complete') initGUI()
+}
 document.addEventListener('click', () => {
-	window.setFullscreen()
+	setFullscreen()
 	window.sound.init()
 }, {once: true})
 
-lockScreen()
+window.oncontextmenu = e => { e.preventDefault(); return false }
+window.onresize = () => { window.game?.resizeScene() }
+
+toggleLockScreen()

@@ -1,5 +1,6 @@
 'use strict'
-import * as THREE from '../modules/three.module.js'
+
+import { SRGBColorSpace, Mesh, BoxGeometry, MeshBasicMaterial, AnimationMixer} from 'three'
 import { Entity } from './entity.js'
 
 export class Skeleton extends Entity {
@@ -21,15 +22,15 @@ export class Skeleton extends Entity {
 				this.object.traverse(el => {
 					if (el.isMesh) el.castShadow = true
 				})
-				this.object.colorSpace = THREE.SRGBColorSpace
+				this.object.colorSpace = SRGBColorSpace
 				this.object.position.y -= 0.5
 				this.object.position.x -= 3
 				this.object.rotation.y = Math.PI / 2
 				this.object.scale.set(0.35, 0.35, 0.35)
-				this.object.hitbox = new THREE.Mesh(new THREE.BoxGeometry(0.75, 5.25, 0.75), new THREE.MeshBasicMaterial({visible: false, color: 0x00ff00}))
+				this.object.hitbox = new Mesh(new BoxGeometry(0.75, 5.25, 0.75), new MeshBasicMaterial({visible: false, color: 0x00ff00}))
 				this.object.add(this.object.hitbox)
 				this.object.hitbox.geometry.computeBoundingBox()
-				this.mixer = new THREE.AnimationMixer(this.object)
+				this.mixer = new AnimationMixer(this.object)
 				this.object.animations = gltf.animations.reduce((p, c) => {
 					p[c.name] = this.mixer.clipAction(c)
 					return p

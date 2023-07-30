@@ -5,6 +5,10 @@
 		"serve": "webpack serve --mode=development",
 		"build": "webpack --mode=production"
 	},
+	"dependencies": {
+		"canon": "^0.4.1",
+		"three": "^0.155.0"
+	},
 	"devDependencies": {
 		"cannon": "^0.6.2",
 		"copy-webpack-plugin": "^11.0.0",

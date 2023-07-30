@@ -1,8 +1,9 @@
 'use strict'
-import * as THREE from '../modules/three.module.js'
+
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { PerspectiveCamera, Clock, AmbientLight, DirectionalLight, TextureLoader, Scene, WebGLRenderer, SRGBColorSpace, Mesh, PlaneGeometry } from 'three'
 import { Skeleton } from '../classes/skeleton.js'
 import { Player } from '../classes/player.js'
-import { OrbitControls } from '../modules/orbitControls.js'
 import texturesLoader from '../classes/texturesLoader.js'
 
 export class Game {
@@ -11,12 +12,12 @@ export class Game {
 
 	constructor() {
 		this.lastFrameTime = performance.now()
-		this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000)
-		this.clock = new THREE.Clock()
-		this.ambientLight = new THREE.AmbientLight(0xffffff, 0.1)
-		this.dirLight = new THREE.DirectionalLight(0xffffff, 0.1)
-		this.textureLoader = new THREE.TextureLoader()
-		this.scene = new THREE.Scene()
+		this.camera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000)
+		this.clock = new Clock()
+		this.ambientLight = new AmbientLight(0xffffff, 0.25)
+		this.dirLight = new DirectionalLight(0xffffff, 0.5)
+		this.textureLoader = new TextureLoader()
+		this.scene = new Scene()
 		this.fps = 0
 		this.fpsLimit = 1/60
 		this.frames = 0
@@ -27,8 +28,8 @@ export class Game {
 	}
 
 	initRender() {
-		this.renderer = new THREE.WebGLRenderer({alpha: true})
-		this.renderer.outputColorSpace = THREE.SRGBColorSpace
+		this.renderer = new WebGLRenderer({alpha: true})
+		this.renderer.outputColorSpace = SRGBColorSpace
 		this.renderer.shadowMap.enabled = true
 		/* this.controls = new OrbitControls(this.camera, this.renderer.domElement)
 		this.controls.enableRotate = true
@@ -75,7 +76,7 @@ export class Game {
 			]
 		})
 		.then(response => {
-			const ground = new THREE.Mesh(new THREE.PlaneGeometry(50, 50, 50, 50), response)
+			const ground = new Mesh(new PlaneGeometry(50, 50, 50, 50), response)
 			ground.rotation.x = - Math.PI / 2
 			ground.position.y -= 0.5
 			ground.receiveShadow = true

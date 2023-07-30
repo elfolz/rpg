@@ -1,5 +1,6 @@
 'use strict'
-import * as THREE from '../modules/three.module.js'
+
+import { SRGBColorSpace, AnimationMixer, Mesh, BoxGeometry, MeshBasicMaterial, PointLight} from 'three'
 import { Entity } from '../classes/entity.js'
 import classes from './classes.js'
 
@@ -25,9 +26,9 @@ export class Player extends Entity {
 					if (el.isMesh) el.castShadow = true
 					if (el.name == 'Plane') el.visible = false
 				})
-				this.object.colorSpace = THREE.SRGBColorSpace
+				this.object.colorSpace = SRGBColorSpace
 				this.object.position.y -= 0.5
-				this.mixer = new THREE.AnimationMixer(this.object)
+				this.mixer = new AnimationMixer(this.object)
 				this.animations = gltf.animations.reduce((p, c) => {
 					p[c.name] = this.mixer.clipAction(c)
 					return p
@@ -37,7 +38,7 @@ export class Player extends Entity {
 				this.object.position.x += 2.75
 				this.object.rotation.y = Math.PI / 2 * -1
 				this.camera.position.z = this.object.position.z + (window.innerWidth > window.innerHeight ? 4 : 14)
-				this.object.hitbox = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2, 0.25), new THREE.MeshBasicMaterial({visible: false, color: 0x00ff00}))
+				this.object.hitbox = new Mesh(new BoxGeometry(0.25, 2, 0.25), new MeshBasicMaterial({visible: false, color: 0x00ff00}))
 				this.object.add(this.object.hitbox)
 				this.object.hitbox.geometry.computeBoundingBox()
 				this.object.originalX = this.object.position.x
@@ -83,7 +84,7 @@ export class Player extends Entity {
 				energyball.scale.set(0.015, 0.015, 0.015)
 				energyball.position.y += 0.1
 				energyball.transparent = true
-				const light = new THREE.PointLight(0xc800ff, 10, 5)
+				const light = new PointLight(0xc800ff, 10, 5)
 				energyball.add(light)
 				updateProjectiles()
 				scene.add(energyball)

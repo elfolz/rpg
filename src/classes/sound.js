@@ -1,5 +1,6 @@
 'use strict'
-import { AudioListener } from '../modules/three.module.js'
+
+import { AudioListener } from 'three'
 
 export class Sound {
 
