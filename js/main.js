@@ -65,22 +65,21 @@ var lastFrameTime = performance.now()
 var chosenClass = Object.keys(classes)[1]
 var arrow
 var energyball
-var blockInteraction = false
 
 function loadModels() {
 	texturesLoader({
 		attributes: {
-			repeat: 20,
+			repeat: 10,
 			normalScale: 1.5,
 			aoMapIntensity: 5,
 			displacementScale: 0.25,
 			displacementBias: -0.01,
 		},
 		textures: [
-			{type: 'aoMap', texture: 'Gravel021_1K_AmbientOcclusion.jpg'},
-			{type: 'displacementMap', texture: 'Gravel021_1K_Displacement.jpg'},
-			{type: 'map', texture: 'Gravel021_1K_Color.jpg'},
-			{type: 'normalMap', texture: 'Gravel021_1K_NormalDX.jpg'}
+			{type: 'aoMap', texture: 'Gravel021_1K_AmbientOcclusion.webp'},
+			{type: 'displacementMap', texture: 'Gravel021_1K_Displacement.webp'},
+			{type: 'map', texture: 'Gravel021_1K_Color.webp'},
+			{type: 'normalMap', texture: 'Gravel021_1K_NormalDX.webp'}
 		]
 	})
 	.then(response => {
@@ -306,7 +305,7 @@ function updateFPSCounter() {
 }
 
 function attack() {
-	if (blockInteraction || character.isFiring || character.isWalking || character.isAttacking) return
+	if (character.isFiring || character.isWalking || character.isAttacking) return
 	document.querySelector('select').disabled = true
 	document.querySelector('main button').disabled = true
 	let animation, delay
@@ -365,7 +364,7 @@ function updateMovement(target) {
 			setTimeout(() => {
 				document.querySelector('select').disabled = false
 				document.querySelector('main button').disabled = false
-			}, delay)
+			}, delay + 100)
 		} else {
 			if (target.rotation.y == target.originalDir) target.rotation.y = target.originalDir * -1
 			target.position.x > target.originalX ? target.position.x -= 0.1 : target.position.x += 0.1
@@ -410,7 +409,7 @@ function updateProjectile(target) {
 		setTimeout(() => {
 			document.querySelector('select').disabled = false
 			document.querySelector('main button').disabled = false
-		}, delay)
+		}, delay + 100)
 	} else {
 		projectile.position.x > opponent.position.x ? projectile.position.x -= 0.25 : projectile.position.x += 0.25
 	}
@@ -457,10 +456,12 @@ function classSelection() {
 			animation = character.animations[animationName]
 			executeCrossFade(character, animation, 'once')
 			delay = animation.getClip().duration * 1000
-			blockInteraction = true
+			document.querySelector('select').disabled = true
+			document.querySelector('main button').disabled = true
 			setTimeout(() => {
-				blockInteraction = false
-			}, delay)
+				document.querySelector('select').disabled = false
+				document.querySelector('main button').disabled = false
+			}, delay + 100)
 		}
 		playSe()
 		chosenClass = e.target.value
@@ -470,10 +471,12 @@ function classSelection() {
 				animation = character.animations[animationName]
 				synchronizeCrossFade(character, animation, 'once')
 				delay = animation.getClip().duration * 1000
-				blockInteraction = true
+				document.querySelector('select').disabled = true
+				document.querySelector('main button').disabled = true
 				setTimeout(() => {
-					blockInteraction = false
-				}, delay)
+					document.querySelector('select').disabled = false
+					document.querySelector('main button').disabled = false
+				}, delay + 100)
 			}, 100)
 			setTimeout(() => {playSe()}, 400)
 		} else if (chosenClass == 'mago') {
@@ -485,10 +488,12 @@ function classSelection() {
 			if (character.lastAction.loop == THREE.LoopOnce) synchronizeCrossFade(character, animation)
 			else executeCrossFade(character, animation)
 			delay = animation.getClip().duration * 1000
-			blockInteraction = true
+			document.querySelector('select').disabled = true
+			document.querySelector('main button').disabled = true
 			setTimeout(() => {
-				blockInteraction = false
-			}, delay)
+				document.querySelector('select').disabled = false
+				document.querySelector('main button').disabled = false
+			}, delay + 100)
 		}, 200)
 		localStorage.setItem('chosenClass', chosenClass)
 	}
