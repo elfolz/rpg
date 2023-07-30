@@ -11,6 +11,7 @@ export class Player extends Entity {
 		this.camera = camera
 		this.hp = 100
 		this.maxhp = 100
+		this.class = Object.keys(classes)[1]
 	}
 
 	loadModel() {
@@ -27,12 +28,12 @@ export class Player extends Entity {
 				this.object.colorSpace = THREE.SRGBColorSpace
 				this.object.position.y -= 0.5
 				this.mixer = new THREE.AnimationMixer(this.object)
-				this.object.animations = gltf.animations.reduce((p, c) => {
+				this.animations = gltf.animations.reduce((p, c) => {
 					p[c.name] = this.mixer.clipAction(c)
 					return p
 				}, {})
-				this.object.lastAction = this.object.animations[classes['espada curta'].idle]
-				this.object.lastAction.play()
+				this.lastAction = this.animations[classes['espada curta'].idle]
+				this.lastAction.play()
 				this.object.position.x += 2.75
 				this.object.rotation.y = Math.PI / 2 * -1
 				this.camera.position.z = this.object.position.z + (window.innerWidth > window.innerHeight ? 4 : 14)
@@ -91,6 +92,26 @@ export class Player extends Entity {
 		.catch(error => {
 			console.log(error)
 		}) */
+	}
+
+	attack() {
+		console.log(0)
+	}
+
+	changeWeapon(direction) {
+		return new Promise(resolve => {
+			const se = window.sound.ses[classes[this.class].se]
+			if (se) window.sound.playSE(se)
+			const animationName = classes[this.class][direction]
+			if (!animationName) {
+				if (se && direction == 'stow') return setTimeout(() => {resolve()}, se.duration * 1000)
+				else return resolve()
+			}
+			const animation = this.animations[animationName]
+			const delay = animation.getClip().duration * 1000
+			this.executeCrossFade(animation, 'once')
+			setTimeout(() => {resolve()}, delay)
+		})
 	}
 
 	gameover() {

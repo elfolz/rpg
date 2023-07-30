@@ -109,7 +109,6 @@ export class Game {
 			document.body.removeChild(document.querySelector('figure'))
 			document.querySelector('main').style.removeProperty('display')
 			document.querySelector('#fps').style.removeProperty('display')
-			document.querySelector('main button').onclick = () => attack()
 		}, 250)
 		this.initiated = true
 	}

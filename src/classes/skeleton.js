@@ -34,8 +34,8 @@ export class Skeleton extends Entity {
 					p[c.name] = this.mixer.clipAction(c)
 					return p
 				}, {})
-				this.object.lastAction = this.object.animations['idle']
-				this.object.lastAction.play()
+				this.lastAction = this.object.animations['idle']
+				this.lastAction.play()
 				this.object.originalX = this.object.position.x
 				this.object.originalDir = this.object.rotation.y
 				this.object.attackDelay = 0.375

@@ -23,7 +23,8 @@ export default {
 		death: 'death(shield)',
 		jump_start: 'jump_start(shield)',
 		jump_end: 'reception(shield)',
-		fall: 'fall(shield)'
+		fall: 'fall(shield)',
+		se: 'sword'
 	},
 	'espada grande': {
 		idle: 'idle(WeaponTwoHand)',
@@ -37,13 +38,15 @@ export default {
 		death: 'death(WeaponTwoHand)',
 		jump_start: 'jump_start(WeaponTwoHand)',
 		jump_end: 'reception(WeaponTwoHand)',
-		fall: 'fall(WeaponTwoHand)'
+		fall: 'fall(WeaponTwoHand)',
+		se: 'great-sword'
 	},
 	cajado: {
 		idle: 'idle(stick)',
 		walk: 'walk(stick)',
 		run: 'stick_RUN',
-		attack1: 'attack1(stick)'
+		attack1: 'attack1(stick)',
+		se: 'stick'
 	},
 	arco: {
 		idle: 'bow_IDLE',
@@ -59,6 +62,7 @@ export default {
 		death: 'bow_DEATH',
 		jump_start: 'jump_start(bow)',
 		jump_end: 'reception(bow)',
-		fall: 'fall(bow)'
+		fall: 'fall(bow)',
+		se: 'bow'
 	}
 }

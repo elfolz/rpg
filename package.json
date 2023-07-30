@@ -6,6 +6,7 @@
 		"build": "webpack --mode=production"
 	},
 	"devDependencies": {
+		"cannon": "^0.6.2",
 		"copy-webpack-plugin": "^11.0.0",
 		"css-loader": "^6.8.1",
 		"html-webpack-injector": "^1.1.4",

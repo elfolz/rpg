@@ -117,6 +117,10 @@ export class Sound {
 		return src
 	}
 
+	playSEbyName(se) {
+		if (this.ses[se]) this.playSE(this.ses[se])
+	}
+
 	playClick() {
 		this.playSE(this.ses['click'])
 	}

@@ -45,27 +45,35 @@ export class Entity {
 		if (!window.game.pause) this.mixer?.update(clockDelta)
 	}
 
-	executeCrossFade(newAction, duration=0.25, loop='repeat') {
-		if (!this.lastAction || !newAction) return
-		if (this.died && newAction.name != 'die') return
-		if (this.lastAction == newAction) return newAction.reset()
-		newAction.enabled = true
-		newAction.setEffectiveTimeScale(1)
-		newAction.setEffectiveWeight(1)
-		newAction.loop = loop == 'pingpong' ? THREE.LoopPingPong : loop == 'once' ? THREE.LoopOnce : THREE.LoopRepeat
-		newAction.clampWhenFinished = (loop == 'once')
-		if (loop == 'once') newAction.reset()
-		this.lastAction.crossFadeTo(newAction, duration, true)
-		this.lastAction = newAction
-		newAction.play()
+	executeCrossFade(newAction, loop='repeat', duration=0.25) {
+		return new Promise(resolve => {
+			if (!this.lastAction || !newAction) return resolve()
+			if (this.died && newAction.name != 'die') return resolve()
+			if (this.lastAction == newAction) {
+				newAction.reset()
+				return resolve()
+			}
+			newAction.enabled = true
+			newAction.setEffectiveTimeScale(1)
+			newAction.setEffectiveWeight(1)
+			newAction.loop = loop == 'pingpong' ? THREE.LoopPingPong : loop == 'once' ? THREE.LoopOnce : THREE.LoopRepeat
+			newAction.clampWhenFinished = (loop == 'once')
+			if (loop == 'once') newAction.reset()
+			this.lastAction.crossFadeTo(newAction, duration, true)
+			this.lastAction = newAction
+			newAction.play()
+			setTimeout(() => {
+				resolve()
+			}, newAction.getClip().duration * 1000)
+		})
 	}
 
-	synchronizeCrossFade(newAction, duration=0.25, loop='repeat') {
+	synchronizeCrossFade(newAction, loop='repeat', duration=0.25) {
 		this.mixer.addEventListener('finished', onLoopFinished)
 		const vm = this
 		function onLoopFinished(event) {
 			vm.mixer.removeEventListener('finished', onLoopFinished)
-			vm.executeCrossFade(newAction, duration, loop)
+			vm.executeCrossFade(newAction, loop, duration)
 		}
 	}
 
