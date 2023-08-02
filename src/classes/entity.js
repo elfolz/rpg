@@ -47,7 +47,7 @@ export class Entity {
 		this.updateActions()
 	}
 
-	executeCrossFade(newAction, loop='repeat', duration=0.25) {
+	executeCrossFade(newAction, loop='repeat', duration=0.25, callback) {
 		return new Promise(resolve => {
 			if (!this.lastAction || !newAction) return resolve()
 			if (this.died && newAction.name != 'die') return resolve()
@@ -65,6 +65,7 @@ export class Entity {
 			this.lastAction = newAction
 			newAction.play()
 			setTimeout(() => {
+				if (callback) callback()
 				resolve()
 			}, newAction.getClip().duration * 1000)
 		})
@@ -74,13 +75,10 @@ export class Entity {
 		return new Promise(resolve => {
 			this.mixer.addEventListener('finished', onLoopFinished)
 			const vm = this
-			function onLoopFinished(event) {
+			function onLoopFinished() {
 				vm.mixer.removeEventListener('finished', onLoopFinished)
 				vm.executeCrossFade(newAction, loop, duration)
-				if (callback) {
-					callback.bind(vm)
-					callback()
-				}
+				if (callback) callback()
 				resolve()
 			}
 		})
@@ -99,7 +97,7 @@ export class Entity {
 
 	setPositionalAudio(name, data, refDistance=10, maxDistance=100) {
 		if (!window.sound?.audioListener) return
-		const sound = new PositionalAudio(window.sound?.audioListener)
+		const sound = new PositionalAudio(window.sound.audioListener)
 		sound.name = name
 		sound.setBuffer(data)
 		sound.setRefDistance(refDistance)
