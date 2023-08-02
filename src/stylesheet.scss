@@ -1,0 +1,95 @@
+* {
+	font-family: sans-serif;
+	box-sizing: border-box;
+	outline: none !important;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
+	-webkit-tap-highlight-color: transparent;
+}
+:root {
+	--color-primary: #00cc99;
+	--color-accent: #9966cc;
+}
+img, svg {
+	-webkit-user-drag: none;
+	user-drag: none;
+}
+html {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	overflow: hidden;
+}
+body {
+	margin: 0;
+	padding-top: env(safe-area-inset-top, 0);
+	padding-bottom: env(safe-area-inset-bottom, 0);
+	background-size: cover;
+	width: 100vw;
+	height: 100vh;
+	color: whitesmoke;
+	&.loaded {
+		background-image: url("/textures/nightsky.webp");
+		background-position: top left;
+		background-size: cover;
+	}
+}
+main {
+	position: fixed;
+	width: 200px;
+	left: 50%;
+	bottom: calc(12px + env(safe-area-inset-bottom, 0));
+	transform: translateX(-50%);
+	background-color: rgba(0, 0, 0, 0.5);
+	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
+	border-radius: 6px;
+	padding: 12px;
+	z-index: 1;
+	span {
+		margin-bottom: 12px;
+		label {
+			margin-bottom: 3px;
+		}
+	}
+	span, span label {
+		display: block;
+	}
+}
+select, option, input[type=text] {
+	width: 100%;
+	border: none;
+	border-radius: 4px;
+	height: 36px;
+	font-size: 1em;
+	background-color: rgba(0, 0, 0, 0.5);
+	color: whitesmoke;
+}
+select:not(:disabled), option, button:not(:disabled) {
+	cursor: pointer;
+}
+input[type=text], select {
+	padding: 0 6px;
+}
+button {
+	width: 100%;
+	border: none;
+	border-radius: 4px;
+	height: 36px;
+	font-size: 1em;
+	background-color: var(--color-primary);
+	color: whitesmoke;
+	text-transform: uppercase;
+	&:disabled {
+		opacity: 0.5;
+	}
+}
+#fps {
+	position: fixed;
+	top: calc(12px + env(safe-area-inset-top, 0));
+	right: 12px;
+	z-index: 1;
+}
