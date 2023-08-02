@@ -44,6 +44,7 @@ export class Entity {
 	update(clockDelta) {
 		if (this.dead) return
 		if (!window.game.pause) this.mixer?.update(clockDelta)
+		this.updateActions()
 	}
 
 	executeCrossFade(newAction, loop='repeat', duration=0.25) {
@@ -69,27 +70,23 @@ export class Entity {
 		})
 	}
 
-	synchronizeCrossFade(newAction, loop='repeat', duration=0.25) {
-		this.mixer.addEventListener('finished', onLoopFinished)
-		const vm = this
-		function onLoopFinished(event) {
-			vm.mixer.removeEventListener('finished', onLoopFinished)
-			vm.executeCrossFade(newAction, loop, duration)
-		}
-	}
-
-	updateObjectFollow(target, collided, speed) {
-		if (!speed && this.movingSpeed) speed = this.movingSpeed
-		else if (!speed) speed = 0.01
-		const fpsSpeed = Math.min(60 * speed / window.game.fps, speed)
-		const pos = target.object.position.clone()
-		const dir = this.object.position.clone().sub(pos)
-		const step = dir.multiplyScalar(collided ? fpsSpeed : fpsSpeed * -1)
-		this.object.lookAt(pos)
-		this.object.position.add(step)
+	synchronizeCrossFade(newAction, loop='repeat', duration=0.25, callback) {
+		return new Promise(resolve => {
+			this.mixer.addEventListener('finished', onLoopFinished)
+			const vm = this
+			function onLoopFinished(event) {
+				vm.mixer.removeEventListener('finished', onLoopFinished)
+				vm.executeCrossFade(newAction, loop, duration)
+				if (callback) {
+					callback.bind(vm)
+					callback()
+				}
+				resolve()
+			}
+		})
 	}
 	
-	async fetchAudio(key, url, positional=false, refDistance=10, maxDistance=100) {
+	async fetchAudio(key, url, positional=false, refDistance=1, maxDistance=10) {
 		if (!window.sound?.audioContext) return
 		try {
 			let response = await fetch(url, {cache: 'force-cache'})
@@ -113,6 +110,13 @@ export class Entity {
 		}
 		if (this.object) this.object.add(sound)
 		else this.pendingSounds.push(sound)
+	}
+
+	implyDamage() {
+		let animation = this.animations['hit']
+		this.executeCrossFade(animation, 'once')
+		animation = this.animations['idle']
+		this.synchronizeCrossFade(animation)
 	}
 
 	loadModel() {}

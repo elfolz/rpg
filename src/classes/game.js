@@ -83,7 +83,7 @@ export class Game {
 			this.scene.add(ground)
 			this.progress['ground'] = 100
 		})
-		this.player = new Player(this.camera,
+		this.player = new Player(this.camera, this.scene,
 			e => {
 				this.scene.add(e)
 			},

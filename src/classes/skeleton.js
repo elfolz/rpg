@@ -18,7 +18,6 @@ export class Skeleton extends Entity {
 		.then(response => {
 			this.gltfLoader.parse(response, null, gltf => {
 				this.object = gltf.scene
-				this.object.name = 'this.object'
 				this.object.traverse(el => {
 					if (el.isMesh) el.castShadow = true
 				})
@@ -27,25 +26,21 @@ export class Skeleton extends Entity {
 				this.object.position.x -= 3
 				this.object.rotation.y = Math.PI / 2
 				this.object.scale.set(0.35, 0.35, 0.35)
-				this.object.hitbox = new Mesh(new BoxGeometry(0.75, 5.25, 0.75), new MeshBasicMaterial({visible: false, color: 0x00ff00}))
-				this.object.add(this.object.hitbox)
-				this.object.hitbox.geometry.computeBoundingBox()
+				this.hitbox = new Mesh(new BoxGeometry(0.75, 5.25, 0.75), new MeshBasicMaterial({visible: false, color: 0x00ff00}))
+				this.object.add(this.hitbox)
+				this.hitbox.geometry.computeBoundingBox()
 				this.mixer = new AnimationMixer(this.object)
-				this.object.animations = gltf.animations.reduce((p, c) => {
+				this.animations = gltf.animations.reduce((p, c) => {
 					p[c.name] = this.mixer.clipAction(c)
 					return p
 				}, {})
-				this.lastAction = this.object.animations['idle']
+				this.lastAction = this.animations['idle']
 				this.lastAction.play()
-				this.object.originalX = this.object.position.x
-				this.object.originalDir = this.object.rotation.y
-				this.object.attackDelay = 0.375
+				this.originalX = this.object.position.x
+				this.originalDir = this.object.rotation.y
+				this.attackDelay = 0.375
 				this.progress['this.object'] = 100
 				this.callback(this.object)
-			}, xhr => {
-				if (xhr.total) this.progress['this.object'] = xhr.loaded / xhr.total * 99
-			}, error => {
-				console.error(error)
 			})
 		})
 		.catch(error => {

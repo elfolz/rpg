@@ -83,6 +83,9 @@ button {
 	background-color: var(--color-primary);
 	color: whitesmoke;
 	text-transform: uppercase;
+	&:disabled {
+		opacity: 0.5;
+	}
 }
 #fps {
 	position: fixed;
