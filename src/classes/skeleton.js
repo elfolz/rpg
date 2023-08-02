@@ -13,7 +13,7 @@ export class Skeleton extends Entity {
 	}
 
 	loadModel() {
-		fetch('/models/skeleton.glb', {cache: 'force-cache'})
+		fetch('./models/skeleton.glb', {cache: 'force-cache'})
 		.then(response => response.arrayBuffer() )
 		.then(response => {
 			this.gltfLoader.parse(response, null, gltf => {

@@ -38,7 +38,7 @@ export class Player extends Entity {
 	}
 
 	loadModel() {
-		fetch('/models/character.glb', {cache: 'force-cache'})
+		fetch('./models/character.glb', {cache: 'force-cache'})
 		.then(response => response.arrayBuffer() )
 		.then(response => {
 			this.gltfLoader.parse(response, null, gltf => {
@@ -77,7 +77,7 @@ export class Player extends Entity {
 
 	loadProjectiles() {
 		this.projectilesProperties.forEach(el => {
-			fetch(`/models/${el.name}.glb`, {cache: 'force-cache'})
+			fetch(`./models/${el.name}.glb`, {cache: 'force-cache'})
 			.then(response => response.arrayBuffer() )
 			.then(response => {
 				this.gltfLoader.parse(response, null, gltf => {
