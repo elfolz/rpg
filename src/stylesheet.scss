@@ -32,7 +32,7 @@ body {
 	height: 100vh;
 	color: whitesmoke;
 	&.loaded {
-		background-image: url("./textures/nightsky.webp");
+		background-image: url("../textures/nightsky.webp");
 		background-position: top left;
 		background-size: cover;
 	}

@@ -1,9 +1,9 @@
 const { InjectManifest } = require('workbox-webpack-plugin')
-const MiniCssExtractPlugin = require("mini-css-extract-plugin")
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const HtmlWebpackInjector = require('html-webpack-injector')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const TerserPlugin = require("terser-webpack-plugin")
-const CopyPlugin = require("copy-webpack-plugin")
+const TerserPlugin = require('terser-webpack-plugin')
+const CopyPlugin = require('copy-webpack-plugin')
 const path = require('path')
 
 module.exports = (env, args) => {
