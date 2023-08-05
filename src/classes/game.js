@@ -14,7 +14,7 @@ export class Game {
 		this.lastFrameTime = performance.now()
 		this.camera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000)
 		this.clock = new Clock()
-		this.ambientLight = new AmbientLight(0xffffff, 0.25)
+		this.ambientLight = new AmbientLight(0xffffff, 0.5)
 		this.dirLight = new DirectionalLight(0xffffff, 0.5)
 		this.textureLoader = new TextureLoader()
 		this.scene = new Scene()
