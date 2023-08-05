@@ -2,7 +2,8 @@
 
 import { SRGBColorSpace, AnimationMixer, Mesh, BoxGeometry, MeshBasicMaterial, PointLight} from 'three'
 import { Entity } from '../classes/entity.js'
-import classes from './classes.js'
+import randomInt from '../helpers/randomInt.js'
+import weapons from './weapons.js'
 
 export class Player extends Entity {
 
@@ -33,7 +34,7 @@ export class Player extends Entity {
 		this.scene = scene
 		this.hp = 100
 		this.maxhp = 100
-		this.class = Object.keys(classes)[1]
+		this.class = Object.keys(weapons)[1]
 		this.projectiles = []
 	}
 
@@ -54,11 +55,11 @@ export class Player extends Entity {
 					p[c.name] = this.mixer.clipAction(c)
 					return p
 				}, {})
-				this.lastAction = this.animations[classes['espada curta'].idle]
+				this.lastAction = this.animations[weapons['espada curta'].idle]
 				this.lastAction.play()
 				this.object.position.x += 2.75
 				this.object.rotation.y = Math.PI / 2 * -1
-				this.camera.position.z = this.object.position.z + (window.innerWidth > window.innerHeight ? 4 : 14)
+				this.resizeScene()
 				this.hitbox = new Mesh(new BoxGeometry(0.25, 2, 0.25), new MeshBasicMaterial({visible: false, color: 0x00ff00}))
 				this.object.add(this.hitbox)
 				this.hitbox.geometry.computeBoundingBox()
@@ -107,18 +108,35 @@ export class Player extends Entity {
 		})
 	}
 
+	roulette() {
+		if (this.spinningRoulette || this.isFiring || this.isWalking || this.isAttacking) return
+		this.spinningRoulette = true
+		const roulette = randomInt(0, 7)
+		const deg = Math.trunc(360 / 8 * roulette)
+		window.sound.playSEbyName('roulette')
+		document.querySelector('mark').classList.add('spin')
+		const delay = window.sound.ses['roulette'].duration
+		setTimeout(() => {
+			document.querySelector('mark').classList.remove('spin')
+			document.querySelector('mark').style.setProperty('--angle', `${deg}deg`)
+			if ([0, 2, 4, 6].includes(roulette)) this.attack()
+			else (window.game.enemy.attack())
+			this.spinningRoulette = false
+		}, delay * 1000)
+	}
+
 	attack() {
 		if (this.isFiring || this.isWalking || this.isAttacking) return
+		let animation, delay
 		document.querySelector('select').disabled = true
 		document.querySelector('main button').disabled = true
-		let animation, delay
 		if (this.class == 'arco' && !this.isFiring) {
 			this.projectiles['arrow'].position.x = this.object.position.x
-			animation = this.animations[classes[this.class].load]
+			animation = this.animations[weapons[this.class].load]
 			this.executeCrossFade(animation, 'once')
-			animation = this.animations[classes[this.class].idleArmed]
+			animation = this.animations[weapons[this.class].idleArmed]
 			this.synchronizeCrossFade(animation, 'once')
-			animation = this.animations[classes[this.class].attack1]
+			animation = this.animations[weapons[this.class].attack1]
 			this.synchronizeCrossFade(animation, 'once')
 			delay = animation.getClip().duration * 1000
 			setTimeout(() => {
@@ -126,11 +144,11 @@ export class Player extends Entity {
 				this.projectiles['arrow'].transparent = false
 				this.isFiring = 'arrow'
 			}, delay * 0.75)
-			animation = this.animations[classes[this.class].idle]
+			animation = this.animations[weapons[this.class].idle]
 			this.synchronizeCrossFade(animation)
 		} else if (this.class == 'cajado' && !this.isFiring) {
 			this.projectiles['energyball'].position.x = this.object.position.x
-			animation = this.animations[classes[this.class].attack1]
+			animation = this.animations[weapons[this.class].attack1]
 			this.executeCrossFade(animation, 'once')
 			delay = animation.getClip().duration * 1000
 			setTimeout(() => {
@@ -138,10 +156,10 @@ export class Player extends Entity {
 				this.projectiles['energyball'].transparent = false
 				this.isFiring = 'energyball'
 			}, delay * 0.25)
-			animation = this.animations[classes[this.class].idle]
+			animation = this.animations[weapons[this.class].idle]
 			this.synchronizeCrossFade(animation)
 		} else {
-			animation = this.animations[classes[this.class].run ?? classes.general.run]
+			animation = this.animations[weapons[this.class].run ?? weapons.general.run]
 			this.executeCrossFade(animation)
 			this.isWalking = true
 		}
@@ -149,9 +167,9 @@ export class Player extends Entity {
 
 	changeWeapon(direction) {
 		return new Promise(resolve => {
-			const se = window.sound.ses[classes[this.class].se]
+			const se = window.sound.ses[weapons[this.class].se]
 			if (se) window.sound.playSE(se)
-			const animationName = classes[this.class][direction]
+			const animationName = weapons[this.class][direction]
 			if (!animationName) {
 				if (se && direction == 'stow') return setTimeout(() => {resolve()}, se.duration * 1000)
 				else return resolve()
@@ -173,7 +191,7 @@ export class Player extends Entity {
 		const reached = Math.max(this.object.position.x, window.game.enemy.object.position.x) - Math.min(this.object.position.x, window.game.enemy.object.position.x)
 		if (this.isReturning) {
 			if (this.object.position.x == this.originalX) {
-				animation = this.animations[classes[this.class].idle ?? classes.general.idle]
+				animation = this.animations[weapons[this.class].idle ?? weapons.general.idle]
 				delay = animation.getClip().duration * 1000
 				this.executeCrossFade(animation)
 				this.object.rotation.y = this.originalDirection
@@ -190,7 +208,7 @@ export class Player extends Entity {
 			}
 		} else if (reached <= 1) {
 			if (!this.isAttacking) {
-				animation = this.animations[classes[this.class].attack1 ?? classes.general.attack1]
+				animation = this.animations[weapons[this.class].attack1 ?? weapons.general.attack1]
 				delay = animation.getClip().duration * 1000
 				this.executeCrossFade(animation, 'once')
 				setTimeout(() => {
@@ -200,7 +218,7 @@ export class Player extends Entity {
 						window.game.enemy.implyDamage()
 					}, window.sound.ses['sword'].duration * 500)
 				}, delay * this.attackDelay)
-				animation = this.animations[classes[this.class].run ?? classesgeneral.run]
+				animation = this.animations[weapons[this.class].run ?? weapons.general.run]
 				this.synchronizeCrossFade(animation, 'repeat', 0.25, () => {
 					this.isReturning = true
 				})
@@ -251,6 +269,13 @@ export class Player extends Entity {
 		super.update(clockDelta)
 		this.updateProjectiles()
 	}
+	
+	implyDamage() {
+		let animation = this.animations[weapons[this.class].hit ?? weapons.general.hit]
+		this.executeCrossFade(animation, 'once')
+		animation = this.animations[weapons[this.class].idle ?? weapons.general.idle]
+		this.synchronizeCrossFade(animation)
+	}
 
 	gameover() {
 		/* document.querySelector('#game-over').classList.add('show')
@@ -267,6 +292,7 @@ export class Player extends Entity {
 	}
 
 	resizeScene() {
+		this.camera.position.z = this.object.position.z + (window.innerWidth > window.innerHeight ? 4 : 14)
 		this.refreshHPBar()
 	}
 

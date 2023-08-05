@@ -10,6 +10,7 @@
 :root {
 	--color-primary: #00cc99;
 	--color-accent: #9966cc;
+	--color-error: #e4717a;
 }
 img, svg {
 	-webkit-user-drag: none;
@@ -59,6 +60,80 @@ main {
 		display: block;
 	}
 }
+section {
+	position: fixed;
+	right: calc(50% + 20px);
+	span {
+		position: absolute;
+		display: block;
+		width: 0;
+		height: 0;
+		border-style: solid;
+		border-width: 0 15px 30px 15px;
+		transform-origin: top;
+		border-radius: 6px;
+		&:nth-of-type(1) {
+			transform: rotate(0deg);
+		}
+		&:nth-of-type(2) {
+			transform: rotate(45deg);
+		}
+		&:nth-of-type(3) {
+			transform: rotate(90deg);
+		}
+		&:nth-of-type(4) {
+			transform: rotate(135deg);
+		}
+		&:nth-of-type(5) {
+			transform: rotate(180deg);
+		}
+		&:nth-of-type(6) {
+			transform: rotate(225deg);
+		}
+		&:nth-of-type(7) {
+			transform: rotate(270deg);
+		}
+		&:nth-of-type(8) {
+			transform: rotate(315deg);
+		}
+		&:nth-of-type(even) {
+			border-color: transparent transparent var(--color-error) transparent;
+		}
+		&:nth-of-type(odd) {
+			border-color: transparent transparent var(--color-primary) transparent;
+		}
+	}
+	mark {
+		--angle: 0deg;
+		position: absolute;
+		top: -25px;
+		left: 13px;
+		width: 0;
+		height: 0;
+		border-style: solid;
+		border-width: 0 2px 25px 2px;
+		border-color: transparent transparent #000 transparent;
+		background-color: unset;
+		transform: rotate(var(--angle));
+		transform-origin: bottom center;
+		transition: all 250ms linear;
+		border-radius: 10px;
+		&:before {
+			content: "";
+			position: absolute;
+			top: 26px;
+			left: 0;
+			width: 8px;
+			height: 8px;
+			background-color: black;
+			transform: translate(-50%, -50%);
+			border-radius: 50%;
+		}
+		&.spin {
+			animation: spin 250ms linear infinite;
+		}
+	}
+}
 select, option, input[type=text] {
 	width: 100%;
 	border: none;
@@ -92,4 +167,22 @@ button {
 	top: calc(12px + env(safe-area-inset-top, 0));
 	right: 12px;
 	z-index: 1;
+}
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+@media screen and (min-height: 801px) {
+	section {
+		bottom: calc(env(safe-area-inset-top, 0) + 186px);
+	}
+}
+@media screen and (max-height: 800px) {
+	section {
+		top: calc(env(safe-area-inset-top, 0) + 42px);
+	}
 }

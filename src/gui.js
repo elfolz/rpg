@@ -1,11 +1,11 @@
 'use strict'
 
-import classes from './classes/classes.js'
+import weapons from './classes/weapons.js'
 
 var wakeLockObj
 
 function initGUI() {
-	Object.keys(classes).forEach(el => {
+	Object.keys(weapons).forEach(el => {
 		if (el == 'general') return
 		const option = document.createElement('option')
 		option.value = el
@@ -18,13 +18,13 @@ function initGUI() {
 		await window.game.player.changeWeapon('stow')
 		window.game.player.class = e.target.value
 		await window.game.player.changeWeapon('take')
-		let animationName = classes[window.game.player.class].idle
+		let animationName = weapons[window.game.player.class].idle
 		let animation = window.game.player.animations[animationName]
 		await window.game.player.executeCrossFade(animation)
 		document.querySelector('select').disabled = false
 		document.querySelector('main button').disabled = false
 	}
-	document.querySelector('main button').onclick = () => window.game.player.attack()
+	document.querySelector('main button').onclick = () => window.game.player.roulette()
 }
 
 function toggleLockScreen() {

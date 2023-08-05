@@ -110,13 +110,6 @@ export class Entity {
 		else this.pendingSounds.push(sound)
 	}
 
-	implyDamage() {
-		let animation = this.animations['hit']
-		this.executeCrossFade(animation, 'once')
-		animation = this.animations['idle']
-		this.synchronizeCrossFade(animation)
-	}
-
 	loadModel() {}
 
 	initAudio() {}

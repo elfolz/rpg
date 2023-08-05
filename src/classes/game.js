@@ -1,6 +1,6 @@
 'use strict'
 
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+/* import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls' */
 import { PerspectiveCamera, Clock, AmbientLight, DirectionalLight, TextureLoader, Scene, WebGLRenderer, SRGBColorSpace, Mesh, PlaneGeometry } from 'three'
 import { Skeleton } from '../classes/skeleton.js'
 import { Player } from '../classes/player.js'
@@ -33,8 +33,8 @@ export class Game {
 		this.renderer.shadowMap.enabled = true
 		/* this.controls = new OrbitControls(this.camera, this.renderer.domElement)
 		this.controls.enableRotate = true
-		this.controls.enableZoom = false */
-		/* this.controls.maxPolarAngle = (Math.PI / 2) - 0.1 */
+		this.controls.enableZoom = false
+		this.controls.maxPolarAngle = (Math.PI / 2) - 0.1 */
 		this.dirLight.position.set(0, 100, 100)
 		this.dirLight.castShadow = true
 		this.scene.add(this.ambientLight)
@@ -108,8 +108,9 @@ export class Game {
 		setTimeout(() => {
 			document.body.classList.add('loaded')
 			document.body.removeChild(document.querySelector('figure'))
-			document.querySelector('main').style.removeProperty('display')
 			document.querySelector('#fps').style.removeProperty('display')
+			document.querySelector('main').style.removeProperty('display')
+			document.querySelector('section').style.removeProperty('display')
 		}, 250)
 		this.initiated = true
 	}
